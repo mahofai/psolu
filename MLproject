@@ -8,3 +8,9 @@ entry_points:
       alpha: {type: float, default: 0.5}
       l1_ratio: {type: float, default: 0.1}
     command: "autogluon-mlflow-project.py {alpha} {l1_ratio}"
+
+  dev:
+    parameters:
+      time_limit: {type: int, default: 300}
+      best_quality: {type: string, enum: ["best_quality", "medium_quality"], default: best_quality}
+    command: "python autogluon-mlflow-project.py {alpha} {time_limit}{best_quality}"
