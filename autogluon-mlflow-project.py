@@ -91,7 +91,7 @@ if __name__ == "__main__":
     with mlflow.start_run() as run:
 
         predictor = TabularPredictor(label='solubility',eval_metric="precision")
-        predictor.fit(train_data=one_hot_train_data1, tuning_data=one_hot_valid_data1, feature_generator=None, time_limit=60*3)
+        predictor.fit(train_data=one_hot_train_data1, tuning_data=one_hot_valid_data1, feature_generator=None)
 
         predictor.leaderboard(one_hot_test_data, silent=True)
         
