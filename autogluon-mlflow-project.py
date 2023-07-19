@@ -94,8 +94,8 @@ if __name__ == "__main__":
     one_hot_train_data1 = one_hot_train_data1.drop(["fold"],axis=1)
     one_hot_valid_data1 = one_hot_valid_data1.drop(["fold"],axis=1)
     
-    print("one_hot_train_data1.shape",one_hot_train_data1.shape)
-    print("one_hot_valid_data1.shape",one_hot_valid_data1.shape)
+    # print("one_hot_train_data1.shape",one_hot_train_data1.shape)
+    # print("one_hot_valid_data1.shape",one_hot_valid_data1.shape)
     # print(one_hot_valid_data1)
 
     with mlflow.start_run() as run:
