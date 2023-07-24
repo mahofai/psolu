@@ -65,7 +65,7 @@ if __name__ == "__main__":
     # time_limit = float(sys.argv[2]) if len(sys.argv) > 2 else 0.5
     quality = sys.argv[2] 
     print(" !!!!!quality:", quality)
-    print("alpha",alpha)
+    print("!!!!alpha",alpha)
     # print("time_limit",time_limit)
     time_limit=1000000
     
@@ -93,22 +93,29 @@ if __name__ == "__main__":
     one_hot_train_data1 = one_hot_train_data1.drop(["fold"],axis=1)
     one_hot_valid_data1 = one_hot_valid_data1.drop(["fold"],axis=1)
     
-    # print("one_hot_train_data1.shape",one_hot_train_data1.shape)
-    # print("one_hot_valid_data1.shape",one_hot_valid_data1.shape)
-    # print(one_hot_valid_data1)
+    print("one_hot_train_data1.shape:",one_hot_train_data1.shape)
+    print("one_hot_valid_data1.shape:",one_hot_valid_data1.shape)
+    print("one_hot_test_data.shape:",one_hot_test_data.shape)
 
     with mlflow.start_run() as run:
         
         predictor = TabularPredictor(label='solubility',eval_metric="precision")
         if quality == "medium_quality":
+            print("!!!!!medium quality!!!!!!")
             predictor.fit(train_data=one_hot_train_data1, tuning_data=one_hot_valid_data1, feature_generator=None, time_limit=time_limit,presets=quality)
         elif quality == "best_quality":
+            print("!!!!!best quality!!!!!!")
             predictor.fit(train_data=one_hot_train_data1, feature_generator=None, time_limit=time_limit,presets=quality)
-        evaluation = predictor.evaluate(one_hot_test_data, silent=True)
-        print("test eval:",evaluation)
+            
+        test_eval = predictor.evaluate(one_hot_test_data)
+        print("test eval:",test_eval)
+        valid_eval = predictor.evaluate(one_hot_valid_data1)
+        print("valid eval:",valid_eval)
         
-        mlflow.log_metric("precision", evaluation["precision"])
-        mlflow.log_metric("auc", evaluation["roc_auc"])
-        mlflow.log_metric("mcc", evaluation["precision"])
+        mlflow.log_metric("test_precision", test_eval["precision"])
+        mlflow.log_metric("test_auc", test_eval["roc_auc"])
+        mlflow.log_metric("test_balanced_acc", test_eval["accuracy"])
+        mlflow.log_metric("test_balanced_acc", test_eval["balanced_accuracy"])
+        mlflow.log_metric("test_mcc", test_eval["mcc"])
 
         mlflow.end_run()
