@@ -1,0 +1,182 @@
+No path specified. Models will be saved in: "AutogluonModels/ag-20230724_085906/"
+Presets specified: ['medium_quality']
+Beginning AutoGluon training ... Time limit = 1000000s
+AutoGluon will save models to "AutogluonModels/ag-20230724_085906/"
+AutoGluon Version:  0.8.2
+Python Version:     3.9.16
+Operating System:   Linux
+Platform Machine:   x86_64
+Platform Version:   #1 SMP Thu Jun 10 13:32:12 UTC 2021
+Disk Space Avail:   251065.34 GB / 595935.30 GB (42.1%)
+Train Data Rows:    8281
+Train Data Columns: 17010
+Tuning Data Rows:    2943
+Tuning Data Columns: 17010
+Label Column: solubility
+Preprocessing data ...
+AutoGluon infers your prediction problem is: 'binary' (because only two unique label-values observed).
+	2 unique label values:  [1, 0]
+	If 'binary' is not the correct problem_type, please manually specify the problem_type parameter during predictor init (You may specify problem_type as one of: ['binary', 'multiclass', 'regression'])
+Selected class <--> label mapping:  class 1 = 1, class 0 = 0
+Using Feature Generators to preprocess the data ...
+Fitting IdentityFeatureGenerator...
+	Inferring data type of each feature based on column values. Set feature_metadata_in to manually specify special dtypes of the features.
+Data preprocessing and feature engineering runtime = 9.22s ...
+AutoGluon will gauge predictive performance using evaluation metric: 'precision'
+	To change this, specify the eval_metric parameter of Predictor()
+User-specified model hyperparameters to be fit:
+{
+	'NN_TORCH': {},
+	'GBM': [{'extra_trees': True, 'ag_args': {'name_suffix': 'XT'}}, {}, 'GBMLarge'],
+	'CAT': {},
+	'XGB': {},
+	'FASTAI': {},
+	'RF': [{'criterion': 'gini', 'ag_args': {'name_suffix': 'Gini', 'problem_types': ['binary', 'multiclass']}}, {'criterion': 'entropy', 'ag_args': {'name_suffix': 'Entr', 'problem_types': ['binary', 'multiclass']}}, {'criterion': 'squared_error', 'ag_args': {'name_suffix': 'MSE', 'problem_types': ['regression', 'quantile']}}],
+	'XT': [{'criterion': 'gini', 'ag_args': {'name_suffix': 'Gini', 'problem_types': ['binary', 'multiclass']}}, {'criterion': 'entropy', 'ag_args': {'name_suffix': 'Entr', 'problem_types': ['binary', 'multiclass']}}, {'criterion': 'squared_error', 'ag_args': {'name_suffix': 'MSE', 'problem_types': ['regression', 'quantile']}}],
+	'KNN': [{'weights': 'uniform', 'ag_args': {'name_suffix': 'Unif'}}, {'weights': 'distance', 'ag_args': {'name_suffix': 'Dist'}}],
+}
+Fitting 13 L1 models ...
+Fitting model: KNeighborsUnif ... Training model for up to 999990.78s of the 999989.36s of remaining time.
+	No valid features to train KNeighborsUnif... Skipping this model.
+Fitting model: KNeighborsDist ... Training model for up to 999984.97s of the 999983.56s of remaining time.
+	No valid features to train KNeighborsDist... Skipping this model.
+Fitting model: LightGBMXT ... Training model for up to 999979.96s of the 999978.54s of remaining time.
+	0.7216	 = Validation score   (precision)
+	33.82s	 = Training   runtime
+	0.41s	 = Validation runtime
+Fitting model: LightGBM ... Training model for up to 999943.94s of the 999942.55s of remaining time.
+	0.7216	 = Validation score   (precision)
+	29.93s	 = Training   runtime
+	0.42s	 = Validation runtime
+Fitting model: RandomForestGini ... Training model for up to 999911.83s of the 999910.42s of remaining time.
+	0.7082	 = Validation score   (precision)
+	22.66s	 = Training   runtime
+	0.27s	 = Validation runtime
+Fitting model: RandomForestEntr ... Training model for up to 999886.85s of the 999885.42s of remaining time.
+	0.706	 = Validation score   (precision)
+	21.52s	 = Training   runtime
+	0.24s	 = Validation runtime
+Fitting model: CatBoost ... Training model for up to 999863.03s of the 999861.6s of remaining time.
+	0.727	 = Validation score   (precision)
+	426.94s	 = Training   runtime
+	11.1s	 = Validation runtime
+Fitting model: ExtraTreesGini ... Training model for up to 999422.93s of the 999421.51s of remaining time.
+	0.7106	 = Validation score   (precision)
+	21.67s	 = Training   runtime
+	0.31s	 = Validation runtime
+Fitting model: ExtraTreesEntr ... Training model for up to 999399.05s of the 999397.64s of remaining time.
+	0.7053	 = Validation score   (precision)
+	21.17s	 = Training   runtime
+	0.56s	 = Validation runtime
+Fitting model: NeuralNetFastAI ... Training model for up to 999374.99s of the 999373.55s of remaining time.
+/user/mahaohui/miniconda3/envs/automl/lib/python3.9/site-packages/sklearn/metrics/_classification.py:1344: UndefinedMetricWarning: Precision is ill-defined and being set to 0.0 due to no predicted samples. Use `zero_division` parameter to control this behavior.
+  _warn_prf(average, modifier, msg_start, len(result))
+/user/mahaohui/miniconda3/envs/automl/lib/python3.9/site-packages/sklearn/metrics/_classification.py:1344: UndefinedMetricWarning: Precision is ill-defined and being set to 0.0 due to no predicted samples. Use `zero_division` parameter to control this behavior.
+  _warn_prf(average, modifier, msg_start, len(result))
+/user/mahaohui/miniconda3/envs/automl/lib/python3.9/site-packages/sklearn/metrics/_classification.py:1344: UndefinedMetricWarning: Precision is ill-defined and being set to 0.0 due to no predicted samples. Use `zero_division` parameter to control this behavior.
+  _warn_prf(average, modifier, msg_start, len(result))
+/user/mahaohui/miniconda3/envs/automl/lib/python3.9/site-packages/sklearn/metrics/_classification.py:1344: UndefinedMetricWarning: Precision is ill-defined and being set to 0.0 due to no predicted samples. Use `zero_division` parameter to control this behavior.
+  _warn_prf(average, modifier, msg_start, len(result))
+	0.802	 = Validation score   (precision)
+	2348.75s	 = Training   runtime
+	67.24s	 = Validation runtime
+Fitting model: XGBoost ... Training model for up to 996954.82s of the 996953.42s of remaining time.
+	0.7314	 = Validation score   (precision)
+	70.25s	 = Training   runtime
+	0.34s	 = Validation runtime
+Fitting model: NeuralNetTorch ... Training model for up to 996882.71s of the 996881.29s of remaining time.
+/user/mahaohui/miniconda3/envs/automl/lib/python3.9/site-packages/torch/nn/init.py:405: UserWarning: Initializing zero-element tensors is a no-op
+  warnings.warn("Initializing zero-element tensors is a no-op")
+	Warning: Exception caused NeuralNetTorch to fail during training... Skipping this model.
+		list index out of range
+Detailed Traceback:
+Traceback (most recent call last):
+  File "/user/mahaohui/miniconda3/envs/automl/lib/python3.9/site-packages/autogluon/core/trainer/abstract_trainer.py", line 1733, in _train_and_save
+    model = self._train_single(X, y, model, X_val, y_val, total_resources=total_resources, **model_fit_kwargs)
+  File "/user/mahaohui/miniconda3/envs/automl/lib/python3.9/site-packages/autogluon/core/trainer/abstract_trainer.py", line 1684, in _train_single
+    model = model.fit(X=X, y=y, X_val=X_val, y_val=y_val, total_resources=total_resources, **model_fit_kwargs)
+  File "/user/mahaohui/miniconda3/envs/automl/lib/python3.9/site-packages/autogluon/core/models/abstract/abstract_model.py", line 829, in fit
+    out = self._fit(**kwargs)
+  File "/user/mahaohui/miniconda3/envs/automl/lib/python3.9/site-packages/autogluon/tabular/models/tabular_nn/torch/tabular_nn_torch.py", line 207, in _fit
+    self._train_net(
+  File "/user/mahaohui/miniconda3/envs/automl/lib/python3.9/site-packages/autogluon/tabular/models/tabular_nn/torch/tabular_nn_torch.py", line 307, in _train_net
+    loss = self.model.compute_loss(data_batch, **loss_kwargs)
+  File "/user/mahaohui/miniconda3/envs/automl/lib/python3.9/site-packages/autogluon/tabular/models/tabular_nn/torch/torch_network_modules.py", line 233, in compute_loss
+    predict_data = self(data_batch)
+  File "/user/mahaohui/miniconda3/envs/automl/lib/python3.9/site-packages/torch/nn/modules/module.py", line 1194, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/user/mahaohui/miniconda3/envs/automl/lib/python3.9/site-packages/autogluon/tabular/models/tabular_nn/torch/torch_network_modules.py", line 174, in forward
+    input_data = input_data[0]
+IndexError: list index out of range
+Fitting model: LightGBMLarge ... Training model for up to 996865.66s of the 996864.27s of remaining time.
+	0.7146	 = Validation score   (precision)
+	34.14s	 = Training   runtime
+	0.44s	 = Validation runtime
+Fitting model: WeightedEnsemble_L2 ... Training model for up to 99999.08s of the 996826.03s of remaining time.
+	0.8623	 = Validation score   (precision)
+	2.36s	 = Training   runtime
+	0.01s	 = Validation runtime
+AutoGluon training complete, total runtime = 3177.78s ... Best model: "WeightedEnsemble_L2"
+TabularPredictor saved. To load, use: predictor = TabularPredictor.load("AutogluonModels/ag-20230724_085906/")
+Evaluation: precision on test data: 0.8393782383419689
+Evaluations on test data:
+{
+    "precision": 0.8393782383419689,
+    "accuracy": 0.46258503401360546,
+    "balanced_accuracy": 0.5639749927160854,
+    "mcc": 0.1743616413017101,
+    "roc_auc": 0.6366264857951318,
+    "f1": 0.31304347826086953,
+    "recall": 0.19239904988123516
+}
+Evaluation: precision on test data: 0.8622540250447227
+Evaluations on test data:
+{
+    "precision": 0.8622540250447227,
+    "accuracy": 0.5742439687393815,
+    "balanced_accuracy": 0.6461403296170625,
+    "mcc": 0.275701222672928,
+    "roc_auc": 0.7594547327369674,
+    "f1": 0.6060987110971392,
+    "recall": 0.46728065923412504
+}
+ !!!!!quality: medium_quality
+!!!!alpha 0.5
+{'valid_raw_types': ['object']}
+one hot encoding protein!!!!
+(8281, 17011)
+(2943, 17011)
+(1323, 17011)
+       aa1_C  aa2_C  aa3_C  aa4_C  ...  aa808_X  aa809_X  aa810_X  solubility
+1      False  False  False  False  ...    False    False    False           1
+2      False  False  False  False  ...    False    False    False           1
+3      False  False  False  False  ...    False    False    False           1
+4      False  False  False  False  ...    False    False    False           1
+5      False  False  False  False  ...    False    False    False           0
+...      ...    ...    ...    ...  ...      ...      ...      ...         ...
+11213  False  False  False  False  ...    False    False    False           0
+11215  False  False  False  False  ...    False    False    False           1
+11216  False  False  False  False  ...    False    False    False           0
+11217  False  False  False  False  ...    False    False    False           0
+11223  False  False  False  False  ...    False    False    False           0
+
+[8281 rows x 17011 columns]
+      aa1_C  aa2_C  aa3_C  aa4_C  ...  aa808_X  aa809_X  aa810_X  solubility
+0     False  False  False  False  ...    False    False    False           0
+1     False  False  False  False  ...    False    False    False           0
+2     False  False  False  False  ...    False    False    False           0
+3     False  False  False  False  ...    False    False    False           1
+4     False  False  False  False  ...    False    False    False           1
+...     ...    ...    ...    ...  ...      ...      ...      ...         ...
+1318  False  False  False  False  ...    False    False    False           1
+1319  False  False  False  False  ...    False    False    False           1
+1320  False  False  False  False  ...    False    False    False           1
+1321  False  False  False  False  ...    False    False    False           1
+1322  False  False  False  False  ...    False    False    False           1
+
+[1323 rows x 17011 columns]
+!!!!!medium quality!!!!!!
+[1000]	valid_set's binary_logloss: 0.631722	valid_set's precision: 0.720213
+[1000]	valid_set's binary_logloss: 0.631722	valid_set's precision: 0.720213
+test eval: {'precision': 0.8393782383419689, 'accuracy': 0.46258503401360546, 'balanced_accuracy': 0.5639749927160854, 'mcc': 0.1743616413017101, 'roc_auc': 0.6366264857951318, 'f1': 0.31304347826086953, 'recall': 0.19239904988123516}
+valid eval: {'precision': 0.8622540250447227, 'accuracy': 0.5742439687393815, 'balanced_accuracy': 0.6461403296170625, 'mcc': 0.275701222672928, 'roc_auc': 0.7594547327369674, 'f1': 0.6060987110971392, 'recall': 0.46728065923412504}

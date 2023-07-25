@@ -18,22 +18,6 @@ from autogluon.features.generators import CategoryFeatureGenerator, AsTypeFeatur
 
 from feature_generator import one_hot_Generator
 
-
-
-train_feature_generator = PipelineFeatureGenerator(
-    generators=[
-        [   one_hot_Generator(verbosity=3,features_in=['seq'],seq_type = "protein"),
-            IdentityFeatureGenerator(infer_features_in_args=dict(
-                valid_raw_types=[R_INT, R_FLOAT])),
-        ],
-        
-     ],
-    verbosity=3,
-    post_drop_duplicates=False,
-    post_generators=[IdentityFeatureGenerator()]
-)
-
-
 class AutogluonModel(mlflow.pyfunc.PythonModel):
 
     def __init__(self, predictor):
@@ -54,26 +38,30 @@ class AutogluonModel(mlflow.pyfunc.PythonModel):
         return self.predictor.leaderboard(model_input)
 
 
+
+
 if __name__ == "__main__":
-    train_data = TabularDataset('train.csv')
-    test_data = TabularDataset('test.csv')
-    train_data = train_data
-    test_data = test_data
-    concatenated_df  = pd.concat([train_data,test_data], axis=0)
     
     alpha = float(sys.argv[1]) if len(sys.argv) > 1 else 0.5
-    # time_limit = float(sys.argv[2]) if len(sys.argv) > 2 else 0.5
     quality = sys.argv[2] 
     print(" !!!!!quality:", quality)
     print("!!!!alpha",alpha)
-    # print("time_limit",time_limit)
-    time_limit=1000000
-    
+
+
+    train_data = TabularDataset('data/train.csv')
+    test_data = TabularDataset('data/test.csv')
+
+    # train_data = train_data.iloc[:500]
+    # test_data = test_data[:100]
+    concatenated_df  = pd.concat([train_data,test_data], axis=0)
+
     train_feature_generator = PipelineFeatureGenerator(
         generators=[
-            [   one_hot_Generator(verbosity=3,features_in=['seq'],seq_type = "protein"),
-                IdentityFeatureGenerator(infer_features_in_args=dict(
-                    valid_raw_types=[R_INT, R_FLOAT])),
+            [# count_charge_Generator(),
+            # net_charge_Generator(),
+            one_hot_Generator(verbosity=3,features_in=['seq'],seq_type = "protein"),
+            IdentityFeatureGenerator(infer_features_in_args=dict(
+            valid_raw_types=[R_INT, R_FLOAT])),
             ],
             
         ],
@@ -82,30 +70,30 @@ if __name__ == "__main__":
         post_generators=[IdentityFeatureGenerator()]
     )
     one_hot_all_data = train_feature_generator.fit_transform(X=concatenated_df)
-    
+
     one_hot_train_data = one_hot_all_data[:len(train_data)]
     one_hot_test_data = one_hot_all_data[len(train_data):]
-    
-    # print(concatenated_df)
+
     one_hot_valid_data1 = one_hot_train_data[one_hot_train_data["fold"] ==0.0]
     one_hot_train_data1 = one_hot_train_data[one_hot_train_data["fold"] !=0.0]
 
     one_hot_train_data1 = one_hot_train_data1.drop(["fold"],axis=1)
     one_hot_valid_data1 = one_hot_valid_data1.drop(["fold"],axis=1)
-    
-    print("one_hot_train_data1.shape:",one_hot_train_data1.shape)
-    print("one_hot_valid_data1.shape:",one_hot_valid_data1.shape)
-    print("one_hot_test_data.shape:",one_hot_test_data.shape)
+    one_hot_test_data = one_hot_test_data.drop(["fold"],axis=1)
+    print(one_hot_train_data1.shape)
+    print(one_hot_valid_data1.shape)
+    print(one_hot_test_data.shape)
+    print(one_hot_train_data1)
+    print(one_hot_test_data)
 
     with mlflow.start_run() as run:
-        
         predictor = TabularPredictor(label='solubility',eval_metric="precision")
         if quality == "medium_quality":
             print("!!!!!medium quality!!!!!!")
-            predictor.fit(train_data=one_hot_train_data1, tuning_data=one_hot_valid_data1, feature_generator=None, time_limit=time_limit,presets=quality)
+            predictor.fit(train_data=one_hot_train_data1, tuning_data=one_hot_valid_data1, feature_generator=None)
         elif quality == "best_quality":
             print("!!!!!best quality!!!!!!")
-            predictor.fit(train_data=one_hot_train_data1, feature_generator=None, time_limit=time_limit,presets=quality)
+            predictor.fit(train_data=one_hot_train_data1, feature_generator=None, presets=quality)
             
         test_eval = predictor.evaluate(one_hot_test_data)
         print("test eval:",test_eval)
@@ -119,3 +107,6 @@ if __name__ == "__main__":
         mlflow.log_metric("test_mcc", test_eval["mcc"])
 
         mlflow.end_run()
+        
+        
+
