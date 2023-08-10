@@ -9,7 +9,7 @@ from autogluon.common.features.types import R_INT,R_FLOAT,R_OBJECT,R_CATEGORY,S_
 from autogluon.features.generators import CategoryFeatureGenerator, AsTypeFeatureGenerator, BulkFeatureGenerator, DropUniqueFeatureGenerator, FillNaFeatureGenerator, PipelineFeatureGenerator, OneHotEncoderFeatureGenerator,IdentityFeatureGenerator
 # import sys
 # sys.path.append('/user/mahaohui/autoML/autogluon_examples')
-from feature_generator import count_charge_Generator, net_charge_Generator, one_hot_Generator
+from .feature_generator import count_charge_Generator, net_charge_Generator, one_hot_Generator
 
 train_data = TabularDataset('data/train.csv')
 test_data = TabularDataset('data/test.csv')

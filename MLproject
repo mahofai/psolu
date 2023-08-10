@@ -5,6 +5,29 @@ conda_env: conda.yml
 entry_points:
   main:
     parameters:
-      alpha: {type: float, default: 0.5}
-      best_quality: {type: string, enum: ["best_quality", "medium_quality"], default: best_quality}
-    command: "python autogluon-mlflow-project.py {alpha} {best_quality}"
+      train_data: { type: str, help: 'path to train data csv'}
+      test_data: { type: str, help: 'path to train data csv'}
+      test_n_fold: { type: int, help: 'choose nth fold as validation set',default :  0}
+      searcher: { type: str, help: 'grid/bayes/random', default : ""}
+      num_trials: { type: int, help: 'HPO trials number', default :  2}
+      check_point_name: { type: str, help: 'huggingface_checkpoint', default : "facebook/esm2_t6_8M_UR50D"}
+
+      lr: { type: float, nargs: '+', help: 'learning rate', default : [0.01,0.1]}
+      lr_decay: { type: float, nargs: '+', help: 'learning rate decay', default :  [0.02,0.2]}
+      weight_decay: { type: float, nargs: '+', help: 'weight decay', default :  [0.03,0.3]}
+      batch_size: { type: float, nargs: '+', help: 'batch size', default :  [32,64]}
+      optim_type: { type: str, nargs: '+', help: 'adam/adamw/sgd', default :  ["adam"]}
+      max_epochs: { type: int,  help: 'max traning epoch', default : 2}
+    command: "python /user/mahaohui/autoML/git/psolu/autoMM.py \
+    --test_data {test_data} \
+    --test_n_fold {test_n_fold} \
+    --searcher {searcher} \
+    --num_trials {num_trials} \
+    --check_point_name {check_point_name} \
+    --lr {lr} \
+    --lr_decay {lr_decay} \
+    --weight_decay {weight_decay} \
+    --batch_size {batch_size} \
+    --optim_type {optim_type} \
+    --optim_type {optim_type} \
+    "

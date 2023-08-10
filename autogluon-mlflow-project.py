@@ -16,7 +16,7 @@ from autogluon.common.features.types import R_INT,R_FLOAT,R_OBJECT,R_CATEGORY,S_
 
 from autogluon.features.generators import CategoryFeatureGenerator, AsTypeFeatureGenerator, BulkFeatureGenerator, DropUniqueFeatureGenerator, FillNaFeatureGenerator, PipelineFeatureGenerator, OneHotEncoderFeatureGenerator,IdentityFeatureGenerator
 
-from feature_generator import one_hot_Generator
+from .feature_generator import one_hot_Generator
 
 class AutogluonModel(mlflow.pyfunc.PythonModel):
 
