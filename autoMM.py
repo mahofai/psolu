@@ -12,6 +12,10 @@ import sys
 from sklearn.model_selection import ParameterGrid
 from ray import tune
 
+import mlflow
+import mlflow.pyfunc
+from mlflow import log_metric, log_param, log_artifact
+
 import argparse
 import re
 from ray.tune.search.basic_variant import BasicVariantGenerator
@@ -149,11 +153,28 @@ if __name__ == "__main__" :
 
     print("hyperparameters:",custom_hyperparameters)
 
+    # with mlflow.start_run() as run:
     predictor = MultiModalPredictor(label='solubility',eval_metric = args.metric,)
     predictor.fit(train_data = train_data, tuning_data =valid_data,  column_types = column_types,
                 hyperparameters=custom_hyperparameters,
                 hyperparameter_tune_kwargs = hyperparameter_tune_kwargs
                 )
-    print("finish")
+    # print("finish")
+    
+    print("test eval!!!!:")
+    test_eval = predictor.evaluate(test_data)
+    print("test eval!!!!:wwwwww")
+    print("test eval!!!!:",test_eval)
+    
+    valid_eval = predictor.evaluate(valid_data) 
+    print("valid eval:",valid_eval)
+    
+    mlflow.log_metric("test_precision", test_eval["precision"])
+    mlflow.log_metric("test_auc", test_eval["roc_auc"])
+    mlflow.log_metric("test_balanced_acc", test_eval["accuracy"])
+    mlflow.log_metric("test_balanced_acc", test_eval["balanced_accuracy"])
+    mlflow.log_metric("test_mcc", test_eval["mcc"])
+        
+        
 
 # python autoMM.py  --train_data /user/mahaohui/autoML/autogluon/autogluon_examples/soluprot/data/train.csv   --test_data /user/mahaohui/autoML/autogluon/autogluon_examples/soluprot/data/test.csv  --test_n_fold 1 
