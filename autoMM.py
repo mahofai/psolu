@@ -30,8 +30,8 @@ from sklearn.model_selection import train_test_split
 #TODO cross validation
 
 parser = argparse.ArgumentParser(description='download parser')
-parser.add_argument('--train_data', type=str, help='path to train data csv')
-parser.add_argument('--test_data', type=str, help='path to train data csv')
+parser.add_argument('--train_data', type=str, help='path to train data csv', default = "./data/train.csv")
+parser.add_argument('--test_data', type=str, help='path to train data csv', default = "./data/test.csv")
 parser.add_argument('--test_n_fold', type=int, help='choose nth fold as validation set',default = 0)
 parser.add_argument('--searcher', type=str, help='grid/bayes/random', default = "")
 parser.add_argument('--num_trials', type=int, help='HPO trials number', default = 2)
@@ -42,14 +42,14 @@ parser.add_argument('--lr_decay', type=float, nargs='+', help='learning rate dec
 parser.add_argument('--weight_decay', type=float, nargs='+', help='weight decay', default = [0.03,0.3])
 parser.add_argument('--batch_size', type=float, nargs='+', help='batch size', default = [32,64])
 parser.add_argument('--optim_type', type=str, nargs='+', help='adam/adamw/sgd', default = ["adam"])
-parser.add_argument('--max_epochs', type=int,  help='max traning epoch', default = 2)
+parser.add_argument('--max_epochs', type=int,  help='max traning epoch', default = 5)
 
 parser.add_argument('--metric', type=str,  help='evaluation metric', default = "roc_auc")
 
 args = parser.parse_args()
 
 def check_sequence_type(sequence):
-    print("sequence:", sequence)
+
     # Pattern to match DNA sequence
     dna_pattern = r"^[ACGTN]+$"
 
@@ -82,9 +82,30 @@ if __name__ == "__main__" :
     
     train_data = pd.read_csv(args.train_data)
     test_data = pd.read_csv(args.test_data)
-    train_data = train_data[:500]
+    train_data = train_data[:200]
     test_data = test_data[:200]
     
+    
+    # concatenated_df  = pd.concat([train_data,test_data], axis=0)
+
+    # train_feature_generator = PipelineFeatureGenerator(
+    #     generators=[
+    #         [   one_hot_Generator(verbosity=3,features_in=['seq'],seq_type = "protein"),
+    #             IdentityFeatureGenerator(infer_features_in_args=dict(
+    #                 valid_raw_types=[R_INT, R_FLOAT])),
+    #         ],
+            
+    #     ],
+    #     verbosity=3,
+    #     post_drop_duplicates=False,
+    #     post_generators=[IdentityFeatureGenerator()]
+    # )
+    # one_hot_all_data = train_feature_generator.fit_transform(X=concatenated_df)
+    # one_hot_all_data["seq"] = concatenated_df["seq"]
+    # print("one_hot_all_data:",one_hot_all_data)
+    # # sub dataset
+    # label = 'solubility'
+        
     if args.test_n_fold != -1:
         valid_data = train_data[train_data["fold"] == args.test_n_fold]
         train_data = train_data[train_data["fold"] != args.test_n_fold]
@@ -95,8 +116,18 @@ if __name__ == "__main__" :
         # test_data = test_data.drop(["sid"],axis=1)
     else:
         train_data, valid_data = train_test_split(train_data, test_size=0.2, random_state=42)
-
+        
+        
+    # from autogluon.tabular import FeatureMetadata
+    # feature_metadata = FeatureMetadata.from_df(train_data)
+    # feature_metadata = feature_metadata.add_special_types({"seq": ['text']})
+    # feature_metadata
+    # print("feature_metadata",feature_metadata)
+        
+    print("train_data:",train_data)
+    print("valid_data:",valid_data)
     seqs_columns = find_sequence_columns(train_data)
+    
     print("seqs columns:", seqs_columns)
     column_types = {}
     for seqs_column in seqs_columns:
@@ -104,8 +135,6 @@ if __name__ == "__main__" :
     print("column_types:",column_types)
     
     #grid search
-    
-    print("!!!!!learning rate:",args.lr)
 
     custom_hyperparameters={
         "optimization.learning_rate": tune.uniform(args.lr[0], args.lr[-1]),
@@ -149,32 +178,41 @@ if __name__ == "__main__" :
         hyperparameter_tune_kwargs["num_trials"] = args.num_trials
     else:
         print("no searcher. skip hpo")
+        custom_hyperparameters={
+                    'model.hf_text.checkpoint_name': args.check_point_name,
+                    'optimization.max_epochs': args.max_epochs,
+                    "env.num_gpus": 1,
+                }
 
-
-    print("hyperparameters:",custom_hyperparameters)
+    # from autogluon.tabular.configs.hyperparameter_configs import get_hyperparameter_config
+    # custom_hyperparameters = get_hyperparameter_config('multimodal') # test tabular
+    # print("hyperparameters:",custom_hyperparameters)
+    # predictor = TabularPredictor(label='solubility',eval_metric = args.metric, feature_generator=None)
+    
+    
 
     with mlflow.start_run() as run:
-        predictor = MultiModalPredictor(label='solubility',eval_metric = args.metric,)
-        predictor.fit(train_data = train_data, tuning_data =valid_data,  column_types = column_types,
+        predictor = MultiModalPredictor(label='solubility',eval_metric = args.metric)
+        predictor.fit(train_data = train_data, tuning_data =valid_data,
+                    column_types = column_types,
                     hyperparameters=custom_hyperparameters,
                     hyperparameter_tune_kwargs = hyperparameter_tune_kwargs
                     )
-        # print("finish")
-
+        
         print("test eval!!!!:")
-        test_eval = predictor.evaluate(test_data)
-        print("test eval!!!!:wwwwww")
+        test_eval = predictor.evaluate(test_data, metrics=["accuracy","balanced_accuracy","roc_auc","precision","mcc"])
         print("test eval!!!!:",test_eval)
-
+        
         valid_eval = predictor.evaluate(valid_data) 
         print("valid eval:",valid_eval)
-
+        
         mlflow.log_metric("test_precision", test_eval["precision"])
         mlflow.log_metric("test_auc", test_eval["roc_auc"])
         mlflow.log_metric("test_balanced_acc", test_eval["accuracy"])
         mlflow.log_metric("test_balanced_acc", test_eval["balanced_accuracy"])
         mlflow.log_metric("test_mcc", test_eval["mcc"])
-        
-        
 
 # python autoMM.py  --train_data /user/mahaohui/autoML/autogluon/autogluon_examples/soluprot/data/train.csv   --test_data /user/mahaohui/autoML/autogluon/autogluon_examples/soluprot/data/test.csv  --test_n_fold 1 
+
+
+
