@@ -5,8 +5,8 @@ conda_env: conda.yml
 entry_points:
   main:
     parameters:
-      train_data: { type: str, help: 'path to train data csv', default :  ""}
-      test_data: { type: str, help: 'path to test data csv', default :  ""}
+      train_data: { type: str, help: 'path to train data csv', default :  "./data/train.csv"}
+      test_data: { type: str, help: 'path to test data csv', default : "./data/test.csv"}
       test_n_fold: { type: int, help: 'choose nth fold as validation set',default :  0}
       searcher: { type: str, help: 'grid/bayes/random', default : ""}
       num_trials: { type: int, help: 'HPO trials number', default :  2}
