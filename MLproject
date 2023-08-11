@@ -18,7 +18,7 @@ entry_points:
       batch_size: { type: float, nargs: '+', help: 'batch size', default :  32}
       optim_type: { type: str, nargs: '+', help: 'adam/adamw/sgd', default :  "adam"}
       max_epochs: { type: int,  help: 'max traning epoch', default : 2}
-    command: "python /user/mahaohui/autoML/git/psolu/autoMM.py \
+    command: "python autoMM.py \
     --test_data {test_data} \
     --test_n_fold {test_n_fold} \
     --searcher {searcher} \
