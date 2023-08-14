@@ -30,6 +30,9 @@ from sklearn.model_selection import train_test_split
 #TODO cross validation
 
 parser = argparse.ArgumentParser(description='download parser')
+
+parser.add_argument('--mode', type=str, help='HPO bayes preset', choices = ["medium_quality", "best_quality","manual"], default = "medium_quality")
+
 parser.add_argument('--train_data', type=str, help='path to train data csv', default = "./data/train.csv")
 parser.add_argument('--test_data', type=str, help='path to train data csv', default = "./data/test.csv")
 parser.add_argument('--test_n_fold', type=int, help='choose nth fold as validation set',default = 0)
@@ -40,7 +43,7 @@ parser.add_argument('--check_point_name', type=str, help='huggingface_checkpoint
 parser.add_argument('--lr', type=float, nargs='+', help='learning rate', default = [0.01,0.1])
 parser.add_argument('--lr_decay', type=float, nargs='+', help='learning rate decay', default = [0.02,0.2])
 parser.add_argument('--weight_decay', type=float, nargs='+', help='weight decay', default = [0.03,0.3])
-parser.add_argument('--batch_size', type=float, nargs='+', help='batch size', default = [32,64])
+parser.add_argument('--batch_size', type=float, nargs='+', help='batch size', default = [32])
 parser.add_argument('--optim_type', type=str, nargs='+', help='adam/adamw/sgd', default = ["adam"])
 parser.add_argument('--max_epochs', type=int,  help='max traning epoch', default = 5)
 
@@ -159,37 +162,65 @@ if __name__ == "__main__" :
     num_trails = args.num_trials
     hyperparameter_tune_kwargs = {}
     
-    if args.searcher == "grid":
-        points=[i for i in ParameterGrid(grid_paras)]
-        print("points:",points, "len of points:", len(points))
-        searcher = BasicVariantGenerator(constant_grid_search=True, points_to_evaluate = points)
-        hyperparameter_tune_kwargs["searcher"] = searcher
-        hyperparameter_tune_kwargs["scheduler"] = "ASHA"
-        hyperparameter_tune_kwargs["num_trials"] = len(points)
+    if args.mode == "manual":
+        print("manual !!!")
+        if args.searcher == "grid":
+            print("grid search !!!")
+            points=[i for i in ParameterGrid(grid_paras)]
+            print("points:",points, "len of points:", len(points))
+            searcher = BasicVariantGenerator(constant_grid_search=True, points_to_evaluate = points)
+            hyperparameter_tune_kwargs["searcher"] = searcher
+            hyperparameter_tune_kwargs["scheduler"] = "ASHA"
+            hyperparameter_tune_kwargs["num_trials"] = len(points)
 
-    elif args.searcher == "bayes":
+        elif args.searcher == "bayes":
+            print("bayes search !!!")
+            hyperparameter_tune_kwargs["searcher"] = "bayes"
+            hyperparameter_tune_kwargs["scheduler"] = "ASHA"
+            hyperparameter_tune_kwargs["num_trials"] = args.num_trials
+
+        elif args.searcher == "random":
+            print("random search !!!")
+            hyperparameter_tune_kwargs["searcher"] = "random"
+            hyperparameter_tune_kwargs["scheduler"] = "ASHA"
+            hyperparameter_tune_kwargs["num_trials"] = args.num_trials
+        else:
+            print("no searcher. skip hpo")
+            custom_hyperparameters={
+                        'model.hf_text.checkpoint_name': args.check_point_name,
+                        'optimization.max_epochs': args.max_epochs,
+                        "env.num_gpus": 1,
+                    }
+    else:
+        print("auto !!!")
+        custom_hyperparameters={
+            "optimization.learning_rate": tune.uniform(1e-5, 0.1),
+            "optimization.lr_decay":tune.uniform(1e-5, 0.1),
+            "optimization.weight_decay": tune.uniform(1e-5, 0.1),
+            "env.batch_size": tune.choice([16,32,64,128,256,512,1024,2048]),
+            "optimization.optim_type": tune.choice(["sdg","adam","adamw"]),
+            'model.hf_text.checkpoint_name': args.check_point_name,
+            'optimization.max_epochs': 2,
+            "env.num_gpus": 1,
+        }
         hyperparameter_tune_kwargs["searcher"] = "bayes"
         hyperparameter_tune_kwargs["scheduler"] = "ASHA"
-        hyperparameter_tune_kwargs["num_trials"] = args.num_trials
+        if args.mode == "medium_quality":
+            hyperparameter_tune_kwargs["num_trials"] = 2
+            print("medium quality!!!")
+        elif  args.mode == "best_quality":
+            hyperparameter_tune_kwargs["num_trials"] = 4
+            print("best quality!!!")
+        else:
+            print("please choose medium or best quality!!!")
 
-    elif args.searcher == "random":
-        hyperparameter_tune_kwargs["searcher"] = "random"
-        hyperparameter_tune_kwargs["scheduler"] = "ASHA"
-        hyperparameter_tune_kwargs["num_trials"] = args.num_trials
-    else:
-        print("no searcher. skip hpo")
-        custom_hyperparameters={
-                    'model.hf_text.checkpoint_name': args.check_point_name,
-                    'optimization.max_epochs': args.max_epochs,
-                    "env.num_gpus": 1,
-                }
 
     # from autogluon.tabular.configs.hyperparameter_configs import get_hyperparameter_config
     # custom_hyperparameters = get_hyperparameter_config('multimodal') # test tabular
     # print("hyperparameters:",custom_hyperparameters)
     # predictor = TabularPredictor(label='solubility',eval_metric = args.metric, feature_generator=None)
     
-    
+
 
     with mlflow.start_run() as run:
         predictor = MultiModalPredictor(label='solubility',eval_metric = args.metric)
