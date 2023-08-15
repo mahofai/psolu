@@ -1,0 +1,181 @@
+SLURM_JOB_NODELIST=gpu003
+SLURM_NODELIST=gpu003
+Tue Aug 15 11:53:19 CST 2023
+Starting job ...
+!!!args.lr: [0.2, 0.3, 0.4]
+args.test_n_fold: 0
+train_data:               sid  ...                                                seq
+1    AaCD00331183  ...  MTAMNILVLGSDSRGSSDADVEANTATDQRADTLMLVHVPADRKKT...
+2    AaCD00331184  ...  MKAEGNTAMNILVLGSDSRGSSDADVEANTATDQRADTLMLVHVPA...
+3    AaCD00331185  ...  MQSFNSGSTKIHNAFPEESTRPQKAEGNTAMNILVLGSDSRGSSDA...
+4    AaCD00331621  ...  MNAPVKFEYFKNPKNRELTAVELEAFAKELDQIKQEVLDDIGEKDA...
+5    AaCD00331622  ...  MEADAKYIYKIRNFVRYSEIASRGMLMFGGWIPPVWLAGTGLLGLS...
+..            ...  ...                                                ...
+191  AtCD00334695  ...  MLFLDSVAMKEKPEGREEYPFSVPAMRHLERLEFKTPITFFAGNNG...
+193  AtCD00334993  ...  MANAIRLPPEAYPMSIAAQKNDDDRQARALAALAEKPDGIVEAIAA...
+196  AtCD00334997  ...  MYHSRPIFNIIDSSNIQDRRELKLVLRHTEIAYRSFAQEDLIPAQR...
+198  AtCD00335000  ...  MYYERPVFDIVDTWEIREREVLKPVLSVAEEDYCYFVQNTVASAQR...
+199  AtCD00335002  ...  MMVYQRPVFTVISLLRIRNREEAKLVLIGAVVVYRNFVEQTLADAQ...
+
+[153 rows x 3 columns]
+valid_data:               sid  ...                                                seq
+0    AaCD00331182  ...  MTYKDGTYSSDGTYTSPNGLETVGVELTLAADKVSAVNITVHPSNP...
+10   AaCD00343815  ...  MDHLGRPEVLTNLSKTVVWKSQNNSYDSNVIQSSIGQFNIGLPGQY...
+21   AaCD00540113  ...  MVTVIVQEGEPIEKVLKRFKARVEQEQILTELKRREYYEPPSERKK...
+61   AbCD00583997  ...  MWTYQKADNPVFQYKAETTFDVPLERAVAVILDVDRAAQWVPYMGK...
+69   AhCD00384692  ...  MEIYVFTPEGRIMELPAGATPVDFANTVHTDIGHACVGSRVDRHPY...
+70   AhCD00384694  ...  MGLTIRILSNDRSGLLRDITTVLANEKINVMGVRSRSNVREQTAEI...
+72   AhCD00384696  ...  MDLFPDEIYVFTPEGRIMELPAGATPVDFAYTVHTDIGHACVDSRV...
+73   AhCD00384697  ...  MNYSGGYGLTIRTLSNDRSGLLRDITTVLANEKINVMGVRSRSNVR...
+82   ApCD00344007  ...  MELRRVEIGMSKVIRVRYEKGVLKPLEPVNLEDGEEVDIIIRENLA...
+83   ApCD00344008  ...  MGWGCAMSKVIRVKYEGGVLKPLEPLVLSEGEEVEVVIRRRVFGEE...
+90   ApCD00536516  ...  MGGEDMAKKKAPSAKEGEKQQGFKEIIPEVTEKLVEQARKEVARER...
+99   ApCD00666085  ...  MARVRIVAKKNGPYLLEVDGKVQTALCRCGHSNNKPYCDGTHARVG...
+110  AsCD00338687  ...  MPKIIEAIYENGVFKPLQKVDLKEGEKIRILLKKIDVEKFIMAKLP...
+111  AsCD00338689  ...  MPKIIEAIYENGVFKPLQKVDLKEGERVRIKLEKVEEVVDEVFGIL...
+112  AsCD00338691  ...  MPKIIEAIYENGVFKPLQKVDLKEGEKAKIVLESISDKTFGILKAS...
+114  AsCD00338695  ...  MQINDMPKVIEAVYENGVFKPLQKVDLKEGEKVKVELKESVVESVA...
+115  AsCD00338696  ...  MGEIIEAVYQKGVLKPLRKVSLREGEIVKVEIRETKKVTGRFYAKL...
+116  AsCD00338698  ...  MSGQFGKEELVHLHLLLFHVKKTFECYGIENEYFNEYDRLNISPVQ...
+118  AsCD00338700  ...  MHKEEIILLHLTLYNIKKLFENAGIANGHFKAYDELGVQPVHIHKS...
+119  AsCD00338704  ...  MKKLAVVGDPDFTIGFMLAGISDIYEVTSDEEIVKAVEDVLKRDDV...
+124  AsCD00338918  ...  MARGDRRADFVVKNAQIVDLVNEEIFEGDIAVAEGFIAGIGSYSGV...
+125  AsCD00338919  ...  MMHHALHIKNGIVIDPKNGVKAEKMDIFVKNGKIVEESEVKGEDVK...
+128  AsCD00339615  ...  MAERVVRCYQCGTCTGICPVSTTDASFPRKPVLLSRFGVGEVIENF...
+134  AsCD00344185  ...  MNRVYVGTVSAVTDIGVFVNLNKRLRGLIHRRNLGNNRFSEDEEIL...
+135  AsCD00344186  ...  MNRVYVGTVSAVTDIGVFVNLNKRLRGLIHRRNLGNNRFSEDEEIL...
+136  AsCD00344187  ...  MGIEDVRINRVYVGTVSAVTDIGVFVNLNKRLRGLIHRRNLGNNRF...
+139  AsCD00344681  ...  MPKIIEAVYENGVFKPLQKVDLREGEKVKIIAGNLVERLRKYRVKV...
+141  AsCD00344683  ...  MPKIIEAVYENGVFKPLQKVDLKEGERVKIKLELKVEPIDLGEPVS...
+143  AsCD00344685  ...  MPKIIEAIYENGVFKPLQKVDLKEGERVRVVVSEVVAKTRGLLKGC...
+144  AsCD00344687  ...  MPKIIEAIYENGVFKPLQKVDLKEGERIKLRIEEGILDVIKKYQGK...
+166  AsCD00540017  ...  MTADLVVSYLETHVVEELLAGGLSYPLKSEINYTVENLGEDYSCNA...
+167  AsCD00540018  ...  MTADLVVSYLETHVVEELLAGGLSYPLKSEINYTVENLGEDYSCNA...
+168  AsCD00540019  ...  MPSGTADLVVSYLETHVVEELLAGGLSYPLKSEINYTVENLGEDYS...
+172  AsCD00546505  ...  MKAREVEFEGHLIDSMIFTKALDIILDLDGEFEILEFRVGKKKDDP...
+173  AsCD00546506  ...  MKAREVEFEGHLIDSMIFTKALDIILDLDGEFEILEFRVGKKKDDP...
+177  AsCD00591107  ...  MAERVVRCYQCGTCTGICPVSTTDASFPRKPVLLSRFGVGEVIENF...
+178  AsCD00591108  ...  MLEACTKCGTCAEACTMYLGSGRKKIYSPVYRSDMLRKIYKKHFTL...
+179  AsCD00591109  ...  MINPKVITRILANTDLKTKMRLAKVVPKLGKSDDVTKCMLCPNMCL...
+180  AsCD00591111  ...  MNIREIAAKCSKCGYCTTCPTYRIEGWETVSPRGKIQLALKYVDGE...
+181  AsCD00591112  ...  MPYKLTLEACTKCGTCAEACTMYLGSGRKKIYSPVYRSDMLRKIYK...
+182  AsCD00591113  ...  MNIREIAAKCSKCGYCTTCPTYRIEGWETVSPRGKIQLALKYVDGE...
+183  AsCD00591114  ...  MINPKVLTRILANPDLNTKMRLAKVVPKLGKSDDVTKCMLCPNMCL...
+189  AsCD00666191  ...  MRADFVVKNAQIVDLVNEEIFEGDIAVAEGFIAGIGSYSGVEECEA...
+192  AtCD00334992  ...  MKKQRFTEEQIIGVLREQEAGAKAADLCRKHGISEATFYNWKAKYG...
+194  AtCD00334995  ...  MATKPALMDIDAQIEKLRERRKTLIVKSADRFARAATKSGLAEMEI...
+195  AtCD00334996  ...  MQRRIFSREYKLEAVKLVRERGVTVAQAARDLDVHENVLRKWVREY...
+197  AtCD00334998  ...  MKKPSSKIREEIARLQDQLKQAETREAERIGRIALKAGLGEIDIEE...
+
+[47 rows x 3 columns]
+seqs columns: ['seq']
+column_types: {'seq': 'text'}
+manual !!!
+bayes search !!!
+== Status ==
+Current time: 2023-08-15 11:54:15 (running for 00:00:18.95)
+Memory usage on this node: 84.9/754.4 GiB 
+Using AsyncHyperBand: num_stopped=0
+Bracket: Iter 4096.000: None | Iter 1024.000: None | Iter 256.000: None | Iter 64.000: None | Iter 16.000: None | Iter 4.000: None | Iter 1.000: None
+Resources requested: 104.0/104 CPUs, 1.0/1 GPUs, 0.0/489.96 GiB heap, 0.0/186.26 GiB objects (0.0/1.0 accelerator_type:V100)
+Result logdir: /user/mahaohui/autoML/git/psolu/AutogluonModels/ag-20230815_035352
+Number of trials: 1/2 (1 RUNNING)
+
+
+== Status ==
+Current time: 2023-08-15 11:54:21 (running for 00:00:24.06)
+Memory usage on this node: 85.2/754.4 GiB 
+Using AsyncHyperBand: num_stopped=0
+Bracket: Iter 4096.000: None | Iter 1024.000: None | Iter 256.000: None | Iter 64.000: None | Iter 16.000: None | Iter 4.000: None | Iter 1.000: None
+Resources requested: 104.0/104 CPUs, 1.0/1 GPUs, 0.0/489.96 GiB heap, 0.0/186.26 GiB objects (0.0/1.0 accelerator_type:V100)
+Result logdir: /user/mahaohui/autoML/git/psolu/AutogluonModels/ag-20230815_035352
+Number of trials: 2/2 (1 PENDING, 1 RUNNING)
+
+
+== Status ==
+Current time: 2023-08-15 11:54:26 (running for 00:00:29.06)
+Memory usage on this node: 86.3/754.4 GiB 
+Using AsyncHyperBand: num_stopped=0
+Bracket: Iter 4096.000: None | Iter 1024.000: None | Iter 256.000: None | Iter 64.000: None | Iter 16.000: None | Iter 4.000: None | Iter 1.000: None
+Resources requested: 104.0/104 CPUs, 1.0/1 GPUs, 0.0/489.96 GiB heap, 0.0/186.26 GiB objects (0.0/1.0 accelerator_type:V100)
+Result logdir: /user/mahaohui/autoML/git/psolu/AutogluonModels/ag-20230815_035352
+Number of trials: 2/2 (1 PENDING, 1 RUNNING)
+
+
+Trial 2611d522 reported val_roc_auc=0.60 with parameters={'model.names': ('categorical_mlp', 'hf_text', 'fusion_mlp'), 'model.hf_text.checkpoint_name': 'facebook/esm2_t6_8M_UR50D', 'optimization.learning_rate': 0.3675835832825197, 'optimization.lr_decay': 0.14135952893367296, 'optimization.weight_decay': 0.0737437192847943, 'env.batch_size': 32, 'optimization.optim_type': 'adam', 'optimization.max_epochs': 5, 'env.num_gpus': 1}.
+== Status ==
+Current time: 2023-08-15 11:54:32 (running for 00:00:35.09)
+Memory usage on this node: 86.7/754.4 GiB 
+Using AsyncHyperBand: num_stopped=0
+Bracket: Iter 4096.000: None | Iter 1024.000: None | Iter 256.000: None | Iter 64.000: None | Iter 16.000: None | Iter 4.000: 0.5 | Iter 1.000: 0.6047980189323425
+Resources requested: 104.0/104 CPUs, 1.0/1 GPUs, 0.0/489.96 GiB heap, 0.0/186.26 GiB objects (0.0/1.0 accelerator_type:V100)
+Current best trial: 2611d522 with val_roc_auc=0.5 and parameters={'model.names': ('categorical_mlp', 'hf_text', 'fusion_mlp'), 'model.hf_text.checkpoint_name': 'facebook/esm2_t6_8M_UR50D', 'optimization.learning_rate': 0.3675835832825197, 'optimization.lr_decay': 0.14135952893367296, 'optimization.weight_decay': 0.0737437192847943, 'env.batch_size': 32, 'optimization.optim_type': 'adam', 'optimization.max_epochs': 5, 'env.num_gpus': 1}
+Result logdir: /user/mahaohui/autoML/git/psolu/AutogluonModels/ag-20230815_035352
+Number of trials: 2/2 (1 PENDING, 1 RUNNING)
+
+
+Trial 2611d522 reported val_roc_auc=0.44 with parameters={'model.names': ('categorical_mlp', 'hf_text', 'fusion_mlp'), 'model.hf_text.checkpoint_name': 'facebook/esm2_t6_8M_UR50D', 'optimization.learning_rate': 0.3675835832825197, 'optimization.lr_decay': 0.14135952893367296, 'optimization.weight_decay': 0.0737437192847943, 'env.batch_size': 32, 'optimization.optim_type': 'adam', 'optimization.max_epochs': 5, 'env.num_gpus': 1}.
+== Status ==
+Current time: 2023-08-15 11:54:37 (running for 00:00:40.19)
+Memory usage on this node: 86.7/754.4 GiB 
+Using AsyncHyperBand: num_stopped=0
+Bracket: Iter 4096.000: None | Iter 1024.000: None | Iter 256.000: None | Iter 64.000: None | Iter 16.000: None | Iter 4.000: 0.5 | Iter 1.000: 0.6047980189323425
+Resources requested: 104.0/104 CPUs, 1.0/1 GPUs, 0.0/489.96 GiB heap, 0.0/186.26 GiB objects (0.0/1.0 accelerator_type:V100)
+Current best trial: 2611d522 with val_roc_auc=0.1944444477558136 and parameters={'model.names': ('categorical_mlp', 'hf_text', 'fusion_mlp'), 'model.hf_text.checkpoint_name': 'facebook/esm2_t6_8M_UR50D', 'optimization.learning_rate': 0.3675835832825197, 'optimization.lr_decay': 0.14135952893367296, 'optimization.weight_decay': 0.0737437192847943, 'env.batch_size': 32, 'optimization.optim_type': 'adam', 'optimization.max_epochs': 5, 'env.num_gpus': 1}
+Result logdir: /user/mahaohui/autoML/git/psolu/AutogluonModels/ag-20230815_035352
+Number of trials: 2/2 (1 PENDING, 1 RUNNING)
+
+
+Trial 2611d522 reported val_roc_auc=0.65 with parameters={'model.names': ('categorical_mlp', 'hf_text', 'fusion_mlp'), 'model.hf_text.checkpoint_name': 'facebook/esm2_t6_8M_UR50D', 'optimization.learning_rate': 0.3675835832825197, 'optimization.lr_decay': 0.14135952893367296, 'optimization.weight_decay': 0.0737437192847943, 'env.batch_size': 32, 'optimization.optim_type': 'adam', 'optimization.max_epochs': 5, 'env.num_gpus': 1}.
+Trial 2611d522 completed. Last result: val_roc_auc=0.6477272510528564,should_checkpoint=True
+== Status ==
+Current time: 2023-08-15 11:54:58 (running for 00:01:01.48)
+Memory usage on this node: 84.9/754.4 GiB 
+Using AsyncHyperBand: num_stopped=0
+Bracket: Iter 4096.000: None | Iter 1024.000: None | Iter 256.000: None | Iter 64.000: None | Iter 16.000: None | Iter 4.000: 0.5 | Iter 1.000: 0.6047980189323425
+Resources requested: 104.0/104 CPUs, 1.0/1 GPUs, 0.0/489.96 GiB heap, 0.0/186.26 GiB objects (0.0/1.0 accelerator_type:V100)
+Current best trial: 2611d522 with val_roc_auc=0.6477272510528564 and parameters={'model.names': ('categorical_mlp', 'hf_text', 'fusion_mlp'), 'model.hf_text.checkpoint_name': 'facebook/esm2_t6_8M_UR50D', 'optimization.learning_rate': 0.3675835832825197, 'optimization.lr_decay': 0.14135952893367296, 'optimization.weight_decay': 0.0737437192847943, 'env.batch_size': 32, 'optimization.optim_type': 'adam', 'optimization.max_epochs': 5, 'env.num_gpus': 1}
+Result logdir: /user/mahaohui/autoML/git/psolu/AutogluonModels/ag-20230815_035352
+Number of trials: 2/2 (1 RUNNING, 1 TERMINATED)
+
+
+== Status ==
+Current time: 2023-08-15 11:55:03 (running for 00:01:06.52)
+Memory usage on this node: 86.6/754.4 GiB 
+Using AsyncHyperBand: num_stopped=0
+Bracket: Iter 4096.000: None | Iter 1024.000: None | Iter 256.000: None | Iter 64.000: None | Iter 16.000: None | Iter 4.000: 0.5 | Iter 1.000: 0.6047980189323425
+Resources requested: 104.0/104 CPUs, 1.0/1 GPUs, 0.0/489.96 GiB heap, 0.0/186.26 GiB objects (0.0/1.0 accelerator_type:V100)
+Current best trial: 2611d522 with val_roc_auc=0.6477272510528564 and parameters={'model.names': ('categorical_mlp', 'hf_text', 'fusion_mlp'), 'model.hf_text.checkpoint_name': 'facebook/esm2_t6_8M_UR50D', 'optimization.learning_rate': 0.3675835832825197, 'optimization.lr_decay': 0.14135952893367296, 'optimization.weight_decay': 0.0737437192847943, 'env.batch_size': 32, 'optimization.optim_type': 'adam', 'optimization.max_epochs': 5, 'env.num_gpus': 1}
+Result logdir: /user/mahaohui/autoML/git/psolu/AutogluonModels/ag-20230815_035352
+Number of trials: 2/2 (1 RUNNING, 1 TERMINATED)
+
+
+Trial 403bb312 reported val_roc_auc=0.45 with parameters={'model.names': ('categorical_mlp', 'hf_text', 'fusion_mlp'), 'model.hf_text.checkpoint_name': 'facebook/esm2_t6_8M_UR50D', 'optimization.learning_rate': 0.3132553423174003, 'optimization.lr_decay': 0.13429652901531872, 'optimization.weight_decay': 0.12994494422280348, 'env.batch_size': 32, 'optimization.optim_type': 'adam', 'optimization.max_epochs': 5, 'env.num_gpus': 1}. This trial completed.
+== Status ==
+Current time: 2023-08-15 11:55:04 (running for 00:01:07.72)
+Memory usage on this node: 86.6/754.4 GiB 
+Using AsyncHyperBand: num_stopped=1
+Bracket: Iter 4096.000: None | Iter 1024.000: None | Iter 256.000: None | Iter 64.000: None | Iter 16.000: None | Iter 4.000: 0.5 | Iter 1.000: 0.5650252774357796
+Resources requested: 0/104 CPUs, 0/1 GPUs, 0.0/489.96 GiB heap, 0.0/186.26 GiB objects (0.0/1.0 accelerator_type:V100)
+Current best trial: 2611d522 with val_roc_auc=0.6477272510528564 and parameters={'model.names': ('categorical_mlp', 'hf_text', 'fusion_mlp'), 'model.hf_text.checkpoint_name': 'facebook/esm2_t6_8M_UR50D', 'optimization.learning_rate': 0.3675835832825197, 'optimization.lr_decay': 0.14135952893367296, 'optimization.weight_decay': 0.0737437192847943, 'env.batch_size': 32, 'optimization.optim_type': 'adam', 'optimization.max_epochs': 5, 'env.num_gpus': 1}
+Result logdir: /user/mahaohui/autoML/git/psolu/AutogluonModels/ag-20230815_035352
+Number of trials: 2/2 (2 TERMINATED)
++--------------+------------+----------------------+------------------+----------------+------------------------+----------------------+------------------------+------------------------+------------------------+------------------------+------------------------+--------+------------------+---------------+
+| Trial name   | status     | loc                  |   env.batch_size |   env.num_gpus | model.hf_text.checkp   | model.names          |   optimization.learnin |   optimization.lr_deca |   optimization.max_epo | optimization.optim_t   |   optimization.weight_ |   iter |   total time (s) |   val_roc_auc |
+|              |            |                      |                  |                | oint_name              |                      |                 g_rate |                      y |                    chs | ype                    |                  decay |        |                  |               |
+|--------------+------------+----------------------+------------------+----------------+------------------------+----------------------+------------------------+------------------------+------------------------+------------------------+------------------------+--------+------------------+---------------|
+| 2611d522     | TERMINATED | 172.16.20.152:179586 |               32 |              1 | facebook/esm2_t_d800   | ('categorical_m_92c0 |               0.367584 |               0.14136  |                      5 | adam                   |              0.0737437 |     10 |         23.6547  |      0.647727 |
+| 403bb312     | TERMINATED | 172.16.20.152:180550 |               32 |              1 | facebook/esm2_t_d800   | ('categorical_m_1580 |               0.313255 |               0.134297 |                      5 | adam                   |              0.129945  |      1 |          6.12067 |      0.445707 |
++--------------+------------+----------------------+------------------+----------------+------------------------+----------------------+------------------------+------------------------+------------------------+------------------------+------------------------+--------+------------------+---------------+
+
+
+Predicting: 0it [00:00, ?it/s]Predicting:   0%|          | 0/2 [00:00<?, ?it/s]Predicting DataLoader 0:   0%|          | 0/2 [00:00<?, ?it/s]Predicting DataLoader 0:  50%|█████     | 1/2 [00:00<00:00,  1.85it/s]Predicting DataLoader 0: 100%|██████████| 2/2 [00:00<00:00,  3.64it/s]Predicting DataLoader 0: 100%|██████████| 2/2 [00:00<00:00,  3.41it/s]
+Predicting: 0it [00:00, ?it/s]Predicting:   0%|          | 0/2 [00:00<?, ?it/s]Predicting DataLoader 0:   0%|          | 0/2 [00:00<?, ?it/s]Predicting DataLoader 0:  50%|█████     | 1/2 [00:00<00:00, 58.30it/s]Predicting DataLoader 0: 100%|██████████| 2/2 [00:00<00:00, 45.32it/s]Predicting DataLoader 0: 100%|██████████| 2/2 [00:00<00:00, 17.77it/s]
+Predicting: 0it [00:00, ?it/s]Predicting:   0%|          | 0/2 [00:00<?, ?it/s]Predicting DataLoader 0:   0%|          | 0/2 [00:00<?, ?it/s]Predicting DataLoader 0:  50%|█████     | 1/2 [00:00<00:00, 54.30it/s]Predicting DataLoader 0: 100%|██████████| 2/2 [00:00<00:00, 65.01it/s]Predicting DataLoader 0: 100%|██████████| 2/2 [00:00<00:00, 24.97it/s]
+test eval!!!!:
+Predicting: 0it [00:00, ?it/s]Predicting:   0%|          | 0/7 [00:00<?, ?it/s]Predicting DataLoader 0:   0%|          | 0/7 [00:00<?, ?it/s]Predicting DataLoader 0:  14%|█▍        | 1/7 [00:00<00:00, 16.91it/s]Predicting DataLoader 0:  29%|██▊       | 2/7 [00:00<00:00, 17.52it/s]Predicting DataLoader 0:  43%|████▎     | 3/7 [00:00<00:00, 17.67it/s]Predicting DataLoader 0:  57%|█████▋    | 4/7 [00:00<00:00, 17.40it/s]Predicting DataLoader 0:  71%|███████▏  | 5/7 [00:00<00:00, 17.57it/s]Predicting DataLoader 0:  86%|████████▌ | 6/7 [00:00<00:00, 18.06it/s]Predicting DataLoader 0: 100%|██████████| 7/7 [00:00<00:00, 20.14it/s]Predicting DataLoader 0: 100%|██████████| 7/7 [00:00<00:00, 17.81it/s]
+test eval!!!!: {'accuracy': 0.335, 'balanced_accuracy': 0.5, 'roc_auc': 0.4922006508809336, 'precision': 0.0, 'mcc': 0.0}
+Predicting: 0it [00:00, ?it/s]Predicting:   0%|          | 0/2 [00:00<?, ?it/s]Predicting DataLoader 0:   0%|          | 0/2 [00:00<?, ?it/s]Predicting DataLoader 0:  50%|█████     | 1/2 [00:00<00:00, 63.65it/s]Predicting DataLoader 0: 100%|██████████| 2/2 [00:00<00:00, 79.51it/s]Predicting DataLoader 0: 100%|██████████| 2/2 [00:00<00:00, 28.89it/s]
+valid eval: {'roc_auc': 0.6325757575757576}
+ending job
+Tue Aug 15 11:55:16 CST 2023

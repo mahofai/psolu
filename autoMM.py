@@ -225,6 +225,7 @@ if __name__ == "__main__" :
 
     with mlflow.start_run() as run:
         predictor = MultiModalPredictor(label='solubility',eval_metric = args.metric)
+        predictor.set_verbosity(4)
         predictor.fit(train_data = train_data, tuning_data =valid_data,
                     column_types = column_types,
                     hyperparameters=custom_hyperparameters,
