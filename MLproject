@@ -5,20 +5,22 @@ conda_env: conda.yml
 entry_points:
   main:
     parameters:
-      mode: { type=str, help='HPO bayes preset', choices = ["medium_quality", "best_quality","manual"], default = "medium_quality"}
+      mode: { type: str, help: 'HPO bayes preset', choices: ["medium_quality", "best_quality","manual"], default: "medium_quality"}
       train_data: { type: str, help: 'path to train data csv', default :  "./data/train.csv"}
       test_data: { type: str, help: 'path to test data csv', default : "./data/test.csv"}
       test_n_fold: { type: int, help: 'choose nth fold as validation set',default :  0}
       searcher: { type: str, help: 'grid/bayes/random', default : ""}
       num_trials: { type: int, help: 'HPO trials number', default :  2}
       check_point_name: { type: str, help: 'huggingface_checkpoint', default : "facebook/esm2_t6_8M_UR50D"}
-
-      lr: { type: float, nargs: '*', help: 'learning rate', default : 0.01}
-      lr_decay: { type: float, nargs: '*', help: 'learning rate decay', default :  0.02}
-      weight_decay: { type: float, nargs: '*', help: 'weight decay', default :  0.03}
-      batch_size: { type: float, nargs: '*', help: 'batch size', default :  32}
-      optim_type: { type: str, nargs: '*', help: 'adam/adamw/sgd', default :  "adam"}
       max_epochs: { type: int,  help: 'max traning epoch', default : 2}
+      metric: { type: str, help: 'evaluation metric', default : "roc_auc"}
+
+      lr: { type: str,  help: 'learning rate', default : "0.01"}
+      lr_decay: { type: str,  help: 'learning rate decay', default :  "0.02"}
+      weight_decay: { type: str,  help: 'weight decay', default :  "0.03"}
+      batch_size: { type: str,  help: 'batch size', default :  "32"}
+      optim_type: { type: str,  help: 'adam/adamw/sgd', default :  "adam"}
+
     command: "python autoMM.py \
     --mode {mode} \
     --test_data {test_data} \
@@ -26,11 +28,15 @@ entry_points:
     --searcher {searcher} \
     --num_trials {num_trials} \
     --check_point_name {check_point_name} \
-    --lr {' '.join(map(str, lr))} \
+    --max_epochs {max_epochs} \
+    --metric {metric} \
+    
+    --lr {lr} \
+    --lr_decay {lr_decay} \
+    --weight_decay {weight_decay} \
+    --batch_size {batch_size} \
+    --optim_type {optim_type} \
+    --optim_type {optim_type} \
     "
 
-    # --lr_decay {lr_decay} \
-    # --weight_decay {weight_decay} \
-    # --batch_size {batch_size} \
-    # --optim_type {optim_type} \
-    # --optim_type {optim_type} \
+

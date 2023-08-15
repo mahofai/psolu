@@ -39,15 +39,15 @@ parser.add_argument('--test_n_fold', type=int, help='choose nth fold as validati
 parser.add_argument('--searcher', type=str, help='grid/bayes/random', default = "")
 parser.add_argument('--num_trials', type=int, help='HPO trials number', default = 2)
 parser.add_argument('--check_point_name', type=str, help='huggingface_checkpoint', default = "facebook/esm2_t6_8M_UR50D")
-
-parser.add_argument('--lr', type=float, nargs='+', help='learning rate', default = [0.01,0.1])
-parser.add_argument('--lr_decay', type=float, nargs='+', help='learning rate decay', default = [0.02,0.2])
-parser.add_argument('--weight_decay', type=float, nargs='+', help='weight decay', default = [0.03,0.3])
-parser.add_argument('--batch_size', type=float, nargs='+', help='batch size', default = [32])
-parser.add_argument('--optim_type', type=str, nargs='+', help='adam/adamw/sgd', default = ["adam"])
+parser.add_argument('--metric', type=str,  help='evaluation metric', default = "roc_auc")
 parser.add_argument('--max_epochs', type=int,  help='max traning epoch', default = 5)
 
-parser.add_argument('--metric', type=str,  help='evaluation metric', default = "roc_auc")
+parser.add_argument('--lr',  type=lambda x: [float(i) for i in x.split()], help='learning rate', default = [1e-6,0.1])
+parser.add_argument('--lr_decay', type=lambda x: [float(i) for i in x.split()], help='learning rate decay', default = [2e-6,0.2])
+parser.add_argument('--weight_decay', type=lambda x: [float(i) for i in x.split()], help='weight decay', default = [3e-6,0.3])
+parser.add_argument('--batch_size', type=lambda x: [float(i) for i in x.split()], help='batch size', default = [32])
+parser.add_argument('--optim_type', type=lambda x: [str(i) for i in x.split()], help='adam/adamw/sgd', default = ["adam"])
+
 
 args = parser.parse_args()
 
@@ -87,6 +87,7 @@ if __name__ == "__main__" :
     test_data = pd.read_csv(args.test_data)
     train_data = train_data[:200]
     test_data = test_data[:200]
+    print("!!!args.lr:",args.lr)
     
     
     # concatenated_df  = pd.concat([train_data,test_data], axis=0)
@@ -237,11 +238,11 @@ if __name__ == "__main__" :
         valid_eval = predictor.evaluate(valid_data) 
         print("valid eval:",valid_eval)
         
-        mlflow.log_metric("test_precision", test_eval["precision"])
-        mlflow.log_metric("test_auc", test_eval["roc_auc"])
-        mlflow.log_metric("test_balanced_acc", test_eval["accuracy"])
-        mlflow.log_metric("test_balanced_acc", test_eval["balanced_accuracy"])
-        mlflow.log_metric("test_mcc", test_eval["mcc"])
+        mlflow.log_metric("test_precision", test_eval["precision"]) # type: ignore
+        mlflow.log_metric("test_auc", test_eval["roc_auc"]) # type: ignore
+        mlflow.log_metric("test_balanced_acc", test_eval["accuracy"]) # type: ignore
+        mlflow.log_metric("test_balanced_acc", test_eval["balanced_accuracy"]) # type: ignore
+        mlflow.log_metric("test_mcc", test_eval["mcc"]) # type: ignore
 
 # python autoMM.py  --train_data /user/mahaohui/autoML/autogluon/autogluon_examples/soluprot/data/train.csv   --test_data /user/mahaohui/autoML/autogluon/autogluon_examples/soluprot/data/test.csv  --test_n_fold 1 
 
