@@ -48,7 +48,6 @@ parser.add_argument('--weight_decay', type=lambda x: [float(i) for i in x.split(
 parser.add_argument('--batch_size', type=lambda x: [float(i) for i in x.split()], help='batch size', default = [32])
 parser.add_argument('--optim_type', type=lambda x: [str(i) for i in x.split()], help='adam/adamw/sgd', default = ["adam"])
 
-
 args = parser.parse_args()
 
 def check_sequence_type(sequence):
