@@ -42,7 +42,7 @@ parser.add_argument('--check_point_name', type=str, help='huggingface_checkpoint
 parser.add_argument('--metric', type=str,  help='evaluation metric', default = "roc_auc")
 parser.add_argument('--max_epochs', type=int,  help='max traning epoch', default = 5)
 
-parser.add_argument('--lr',  type=lambda x: [float(i) for i in x.split()], help='learning rate', default = [1e-6,0.1])
+parser.add_argument('--lr',  type=float, nargs="+", help='learning rate', default = [1e-6,0.1])
 parser.add_argument('--lr_decay', type=lambda x: [float(i) for i in x.split()], help='learning rate decay', default = [2e-6,0.2])
 parser.add_argument('--weight_decay', type=lambda x: [float(i) for i in x.split()], help='weight decay', default = [3e-6,0.3])
 parser.add_argument('--batch_size', type=lambda x: [float(i) for i in x.split()], help='batch size', default = [32])
