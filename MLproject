@@ -31,12 +31,12 @@ entry_points:
     --max_epochs {max_epochs} \
     --metric {metric} \
     
-    --lr {lr} \
+
     --lr_decay {lr_decay} \
     --weight_decay {weight_decay} \
     --batch_size {batch_size} \
     --optim_type {optim_type} \
     --optim_type {optim_type} \
     "
-
+    # --lr {lr} \
 

@@ -14,7 +14,8 @@ echo "SLURM_NODELIST=$SLURM_NODELIST"
 
 date
 echo "Starting job ..."
-python /user/mahaohui/autoML/git/psolu/autoMM.py --lr "0.2 0.3 0.4" --mode manual --searcher bayes
+python /user/mahaohui/autoML/git/psolu/autoMM.py --lr "0.2 0.3 0.4 0.5 0.6" --mode manual --searcher random
+
 echo "ending job"
 
 date

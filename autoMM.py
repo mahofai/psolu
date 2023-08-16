@@ -198,7 +198,7 @@ if __name__ == "__main__" :
             "optimization.lr_decay":tune.uniform(1e-5, 0.1),
             "optimization.weight_decay": tune.uniform(1e-5, 0.1),
             "env.batch_size": tune.choice([16,32,64,128,256,512,1024,2048]),
-            "optimization.optim_type": tune.choice(["sdg","adam","adamw"]),
+            "optimization.optim_type": tune.choice(["adam"]),
             'model.hf_text.checkpoint_name': args.check_point_name,
             'optimization.max_epochs': 2,
             "env.num_gpus": 1,
