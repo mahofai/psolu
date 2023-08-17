@@ -51,6 +51,25 @@ parser.add_argument('--optim_type', type=lambda x: [str(i) for i in x.split()], 
 
 args = parser.parse_args()
 
+class AutogluonModel(mlflow.pyfunc.PythonModel):
+
+    def __init__(self, predictor):
+        self.predictor = predictor
+        
+    # def load_context(self, context):
+    #     print("Loading context")
+    #     # self.predictor = TabularPredictor.load(context.artifacts.get("predictor_path"))
+    #     self.predictor = context.artifacts.get("predictor_path")
+    
+    def predict(self, model_input):
+        return self.predictor.predict(model_input)
+    
+    def evaluate(self, model_input):
+        return self.predictor.evaluate(model_input)
+    
+    def leaderboard(self, model_input):
+        return self.predictor.leaderboard(model_input)
+
 def check_sequence_type(sequence):
 
     # Pattern to match DNA sequence
@@ -232,8 +251,16 @@ if __name__ == "__main__" :
                     hyperparameter_tune_kwargs = hyperparameter_tune_kwargs
                     )
         
+        model = AutogluonModel(predictor)
+        
+        model_info = mlflow.pyfunc.log_model(
+            artifact_path='ag-model', python_model=model
+        )
+
+        loaded_model = mlflow.pyfunc.load_model(model_uri=model_info.model_uri).unwrap_python_model()
+        
         print("test eval!!!!:")
-        test_eval = predictor.evaluate(test_data, metrics=["accuracy","balanced_accuracy","roc_auc","precision","mcc"])
+        test_eval = loaded_model.evaluate(test_data, metrics=["accuracy","balanced_accuracy","roc_auc","precision","mcc"])
         print("test eval!!!!:",test_eval)
         
         valid_eval = predictor.evaluate(valid_data) 
