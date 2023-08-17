@@ -29,10 +29,10 @@ from sklearn.model_selection import train_test_split
 #TODO HPO
 #TODO grid search HPO 
 #TODO cross validation
-
+ 
 parser = argparse.ArgumentParser(description='download parser')
 
-parser.add_argument('--mode', type=str, help='HPO bayes preset', choices = ["medium_quality", "best_quality","manual"], default = "medium_quality")
+parser.add_argument('--mode', type=str, help='HPO bayes preset', choices = ["medium_quality", "best_quality","manual"], default = "manual")
 
 parser.add_argument('--train_data', type=str, help='path to train data csv', default = "./data/train.csv")
 parser.add_argument('--test_data', type=str, help='path to train data csv', default = "./data/test.csv")
@@ -43,7 +43,8 @@ parser.add_argument('--check_point_name', type=str, help='huggingface_checkpoint
 parser.add_argument('--metric', type=str,  help='evaluation metric', default = "roc_auc")
 parser.add_argument('--max_epochs', type=int,  help='max traning epoch', default = 5)
 
-parser.add_argument('--lr',  type=float, nargs="+", help='learning rate', default = [1e-6,0.1])
+# parser.add_argument('--lr',  type=float, nargs="+", help='learning rate', default = [1e-6,0.1])
+parser.add_argument('--lr', type=lambda x: [float(i) for i in x.split()], default = [1e-6,0.1])
 parser.add_argument('--lr_decay', type=lambda x: [float(i) for i in x.split()], help='learning rate decay', default = [2e-6,0.2])
 parser.add_argument('--weight_decay', type=lambda x: [float(i) for i in x.split()], help='weight decay', default = [3e-6,0.3])
 parser.add_argument('--batch_size', type=lambda x: [float(i) for i in x.split()], help='batch size', default = [32])
@@ -64,8 +65,9 @@ class AutogluonModel(mlflow.pyfunc.PythonModel):
     def predict(self, model_input):
         return self.predictor.predict(model_input)
     
-    def evaluate(self, model_input):
-        return self.predictor.evaluate(model_input)
+    def evaluate(self, model_input, metrics=["roc_auc"]):
+        print("!!!self.predictor.evaluate(model_input)")
+        return self.predictor.evaluate(model_input, metrics=metrics)
     
     def leaderboard(self, model_input):
         return self.predictor.leaderboard(model_input)
@@ -107,27 +109,6 @@ if __name__ == "__main__" :
     train_data = train_data[:200]
     test_data = test_data[:200]
     print("!!!args.lr:",args.lr)
-    
-    
-    # concatenated_df  = pd.concat([train_data,test_data], axis=0)
-
-    # train_feature_generator = PipelineFeatureGenerator(
-    #     generators=[
-    #         [   one_hot_Generator(verbosity=3,features_in=['seq'],seq_type = "protein"),
-    #             IdentityFeatureGenerator(infer_features_in_args=dict(
-    #                 valid_raw_types=[R_INT, R_FLOAT])),
-    #         ],
-            
-    #     ],
-    #     verbosity=3,
-    #     post_drop_duplicates=False,
-    #     post_generators=[IdentityFeatureGenerator()]
-    # )
-    # one_hot_all_data = train_feature_generator.fit_transform(X=concatenated_df)
-    # one_hot_all_data["seq"] = concatenated_df["seq"]
-    # print("one_hot_all_data:",one_hot_all_data)
-    # # sub dataset
-    # label = 'solubility'
         
     if args.test_n_fold != -1:
         valid_data = train_data[train_data["fold"] == args.test_n_fold]
@@ -139,13 +120,6 @@ if __name__ == "__main__" :
         # test_data = test_data.drop(["sid"],axis=1)
     else:
         train_data, valid_data = train_test_split(train_data, test_size=0.2, random_state=42)
-        
-        
-    # from autogluon.tabular import FeatureMetadata
-    # feature_metadata = FeatureMetadata.from_df(train_data)
-    # feature_metadata = feature_metadata.add_special_types({"seq": ['text']})
-    # feature_metadata
-    # print("feature_metadata",feature_metadata)
         
     print("train_data:",train_data)
     print("valid_data:",valid_data)
@@ -169,7 +143,6 @@ if __name__ == "__main__" :
         'optimization.max_epochs': args.max_epochs,
         "env.num_gpus": 1,
     }
-    
 
     grid_paras= {
     "optimization.learning_rate" : args.lr,
@@ -234,14 +207,6 @@ if __name__ == "__main__" :
         else:
             print("please choose medium or best quality!!!")
 
-
-    # from autogluon.tabular.configs.hyperparameter_configs import get_hyperparameter_config
-    # custom_hyperparameters = get_hyperparameter_config('multimodal') # test tabular
-    # print("hyperparameters:",custom_hyperparameters)
-    # predictor = TabularPredictor(label='solubility',eval_metric = args.metric, feature_generator=None)
-    
-
-
     with mlflow.start_run() as run:
         predictor = MultiModalPredictor(label='solubility',eval_metric = args.metric)
         predictor.set_verbosity(4)
@@ -251,35 +216,27 @@ if __name__ == "__main__" :
                     hyperparameter_tune_kwargs = hyperparameter_tune_kwargs
                     )
         
-        model = AutogluonModel(predictor)
+        # model = AutogluonModel(predictor)
         
-        model_info = mlflow.pyfunc.log_model(
-            artifact_path='ag-model', python_model=model
-        )
+        # model_info = mlflow.pyfunc.log_model(
+        #     artifact_path='1ag-model', python_model=model
+        # )
+        # print("model_info.model_uri:",model_info.model_uri)
 
-        loaded_model = mlflow.pyfunc.load_model(model_uri=model_info.model_uri).unwrap_python_model()
+        # predictor = mlflow.pyfunc.load_model(model_uri=model_info.model_uri).unwrap_python_model()
         
+        print("test eval!!!!:")
+        test_eval = predictor.evaluate(test_data, metrics=["accuracy","balanced_accuracy","roc_auc","precision","mcc"])
+        print("test eval!!!!:",test_eval)
         
-        ## evaluate mode demo
-        val_metrics = loaded_model.evaluate(valid_data)
-        test_metrics = loaded_model.evaluate(test_data)
-        for k,v in val_metrics.items():
-            mlflow.log_metric('valid_'+k, v)
-        for k,v in test_metrics.items():
-            mlflow.log_metric('test_'+k, v)
+        valid_eval = predictor.evaluate(valid_data, metrics=["accuracy","balanced_accuracy","roc_auc","precision","mcc"]) 
+        print("valid eval:",valid_eval)
         
-        # print("test eval!!!!:")
-        # test_eval = loaded_model.evaluate(test_data, metrics=["accuracy","balanced_accuracy","roc_auc","precision","mcc"])
-        # print("test eval!!!!:",test_eval)
-        
-        # valid_eval = predictor.evaluate(valid_data) 
-        # print("valid eval:",valid_eval)
-        
-        # mlflow.log_metric("test_precision", test_eval["precision"]) # type: ignore
-        # mlflow.log_metric("test_auc", test_eval["roc_auc"]) # type: ignore
-        # mlflow.log_metric("test_balanced_acc", test_eval["accuracy"]) # type: ignore
-        # mlflow.log_metric("test_balanced_acc", test_eval["balanced_accuracy"]) # type: ignore
-        # mlflow.log_metric("test_mcc", test_eval["mcc"]) # type: ignore
+        mlflow.log_metric("test_precision", test_eval["precision"]) # type: ignore
+        mlflow.log_metric("test_auc", test_eval["roc_auc"]) # type: ignore
+        mlflow.log_metric("test_balanced_acc", test_eval["accuracy"]) # type: ignore
+        mlflow.log_metric("test_balanced_acc", test_eval["balanced_accuracy"]) # type: ignore
+        mlflow.log_metric("test_mcc", test_eval["mcc"]) # type: ignore
 
 # python autoMM.py  --train_data /user/mahaohui/autoML/autogluon/autogluon_examples/soluprot/data/train.csv   --test_data /user/mahaohui/autoML/autogluon/autogluon_examples/soluprot/data/test.csv  --test_n_fold 1 
 
