@@ -259,18 +259,27 @@ if __name__ == "__main__" :
 
         loaded_model = mlflow.pyfunc.load_model(model_uri=model_info.model_uri).unwrap_python_model()
         
-        print("test eval!!!!:")
-        test_eval = loaded_model.evaluate(test_data, metrics=["accuracy","balanced_accuracy","roc_auc","precision","mcc"])
-        print("test eval!!!!:",test_eval)
         
-        valid_eval = predictor.evaluate(valid_data) 
-        print("valid eval:",valid_eval)
+        ## evaluate mode demo
+        val_metrics = loaded_model.evaluate(valid_data)
+        test_metrics = loaded_model.evaluate(test_data)
+        for k,v in val_metrics.items():
+            mlflow.log_metric('valid_'+k, v)
+        for k,v in test_metrics.items():
+            mlflow.log_metric('test_'+k, v)
         
-        mlflow.log_metric("test_precision", test_eval["precision"]) # type: ignore
-        mlflow.log_metric("test_auc", test_eval["roc_auc"]) # type: ignore
-        mlflow.log_metric("test_balanced_acc", test_eval["accuracy"]) # type: ignore
-        mlflow.log_metric("test_balanced_acc", test_eval["balanced_accuracy"]) # type: ignore
-        mlflow.log_metric("test_mcc", test_eval["mcc"]) # type: ignore
+        # print("test eval!!!!:")
+        # test_eval = loaded_model.evaluate(test_data, metrics=["accuracy","balanced_accuracy","roc_auc","precision","mcc"])
+        # print("test eval!!!!:",test_eval)
+        
+        # valid_eval = predictor.evaluate(valid_data) 
+        # print("valid eval:",valid_eval)
+        
+        # mlflow.log_metric("test_precision", test_eval["precision"]) # type: ignore
+        # mlflow.log_metric("test_auc", test_eval["roc_auc"]) # type: ignore
+        # mlflow.log_metric("test_balanced_acc", test_eval["accuracy"]) # type: ignore
+        # mlflow.log_metric("test_balanced_acc", test_eval["balanced_accuracy"]) # type: ignore
+        # mlflow.log_metric("test_mcc", test_eval["mcc"]) # type: ignore
 
 # python autoMM.py  --train_data /user/mahaohui/autoML/autogluon/autogluon_examples/soluprot/data/train.csv   --test_data /user/mahaohui/autoML/autogluon/autogluon_examples/soluprot/data/test.csv  --test_n_fold 1 
 
