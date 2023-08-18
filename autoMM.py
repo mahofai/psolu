@@ -15,7 +15,7 @@ from ray import tune
 
 import mlflow
 import mlflow.pyfunc
-from mlflow import log_metric, log_param, log_artifact
+from mlflow import log_metric, log_param, log_artifact, log_text
 
 import argparse
 import re
@@ -47,7 +47,7 @@ parser.add_argument('--max_epochs', type=int,  help='max traning epoch', default
 parser.add_argument('--lr', type=lambda x: [float(i) for i in x.split()], default = [1e-6,0.1])
 parser.add_argument('--lr_decay', type=lambda x: [float(i) for i in x.split()], help='learning rate decay', default = [2e-6,0.2])
 parser.add_argument('--weight_decay', type=lambda x: [float(i) for i in x.split()], help='weight decay', default = [3e-6,0.3])
-parser.add_argument('--batch_size', type=lambda x: [float(i) for i in x.split()], help='batch size', default = [32])
+parser.add_argument('--batch_size', type=lambda x: [int(i) for i in x.split()], help='batch size', default = [32])
 parser.add_argument('--optim_type', type=lambda x: [str(i) for i in x.split()], help='adam/adamw/sgd', default = ["adam"])
 
 args = parser.parse_args()
@@ -216,14 +216,14 @@ if __name__ == "__main__" :
                     hyperparameter_tune_kwargs = hyperparameter_tune_kwargs
                     )
         
-        # model = AutogluonModel(predictor)
+        model = AutogluonModel(predictor)
         
-        # model_info = mlflow.pyfunc.log_model(
-        #     artifact_path='1ag-model', python_model=model
-        # )
-        # print("model_info.model_uri:",model_info.model_uri)
+        model_info = mlflow.pyfunc.log_model(
+            artifact_path='1ag-model', python_model=model
+        )
+        print("model_info.model_uri:",model_info.model_uri)
 
-        # predictor = mlflow.pyfunc.load_model(model_uri=model_info.model_uri).unwrap_python_model()
+        predictor = mlflow.pyfunc.load_model(model_uri=model_info.model_uri).unwrap_python_model()
         
         print("test eval!!!!:")
         test_eval = predictor.evaluate(test_data, metrics=["accuracy","balanced_accuracy","roc_auc","precision","mcc"])
