@@ -33,9 +33,9 @@ from sklearn.model_selection import train_test_split
 parser = argparse.ArgumentParser(description='download parser')
 
 parser.add_argument('--mode', type=str, help='HPO bayes preset', choices = ["medium_quality", "best_quality","manual"], default = "manual")
-
-parser.add_argument('--train_data', type=str, help='path to train data csv', default = "./data/train.csv")
-parser.add_argument('--test_data', type=str, help='path to train data csv', default = "./data/test.csv")
+/user/mahaohui/autoML/git/psolu/AutogluonModels
+parser.add_argument('--train_data', type=str, help='path to train data csv', default = "./data/soluprot/train.csv")
+parser.add_argument('--test_data', type=str, help='path to train data csv', default = "./data/soluprot/test.csv")
 parser.add_argument('--test_n_fold', type=int, help='choose nth fold as validation set',default = 0)
 parser.add_argument('--searcher', type=str, help='grid/bayes/random', default = "")
 parser.add_argument('--num_trials', type=int, help='HPO trials number', default = 2)
