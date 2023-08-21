@@ -27,8 +27,11 @@ from sklearn.model_selection import train_test_split
 #TODO cross validation
  
 parser = argparse.ArgumentParser(description='download parser')
+# complusory settings
 parser.add_argument('--target_column', type=str, help='prediction target column', default = "solubility")
+parser.add_argument('--metric', type=str,  help='evaluation metric', default = "roc_auc")
 
+# HPO settings
 parser.add_argument('--mode', type=str, help='HPO bayes preset', choices = ["medium_quality", "best_quality","manual"], default = "manual")
 parser.add_argument('--train_data', type=str, help='path to train data csv', default = "./data/soluprot/train.csv")
 parser.add_argument('--test_data', type=str, help='path to train data csv', default = "./data/soluprot/test.csv")
@@ -36,15 +39,16 @@ parser.add_argument('--test_n_fold', type=int, help='choose nth fold as validati
 parser.add_argument('--searcher', type=str, help='grid/bayes/random', default = "")
 parser.add_argument('--num_trials', type=int, help='HPO trials number', default = 2)
 parser.add_argument('--check_point_name', type=str, help='huggingface_checkpoint', default = "facebook/esm2_t6_8M_UR50D")
-parser.add_argument('--metric', type=str,  help='evaluation metric', default = "roc_auc")
-parser.add_argument('--max_epochs', type=int,  help='max traning epoch', default = 5)
+parser.add_argument('--max_epochs', type=int,  help='max traning epoch', default = 2)
 
-# parser.add_argument('--lr',  type=float, nargs="+", help='learning rate', default = [1e-6,0.1])
+# parameters settings
 parser.add_argument('--lr', type=lambda x: [float(i) for i in x.split()], default = [1e-6,0.1])
 parser.add_argument('--lr_decay', type=lambda x: [float(i) for i in x.split()], help='learning rate decay', default = [2e-6,0.2])
 parser.add_argument('--weight_decay', type=lambda x: [float(i) for i in x.split()], help='weight decay', default = [3e-6,0.3])
 parser.add_argument('--batch_size', type=lambda x: [int(i) for i in x.split()], help='batch size', default = [32])
 parser.add_argument('--optim_type', type=lambda x: [str(i) for i in x.split()], help='adam/adamw/sgd', default = ["adam"])
+parser.add_argument('--lr_schedule', type=lambda x: [str(i) for i in x.split()], help='cosine_decay/polynomial_decay/linear_decay', default = [""])
+
 
 args = parser.parse_args()
 
@@ -137,6 +141,7 @@ if __name__ == "__main__" :
         "optimization.optim_type": tune.choice(args.optim_type),
         'model.hf_text.checkpoint_name': args.check_point_name,
         'optimization.max_epochs': args.max_epochs,
+        "optimization.lr_schedule":tune.choice(args.lr_schedule),
         "env.num_gpus": 1,
     }
 
@@ -146,6 +151,7 @@ if __name__ == "__main__" :
     "optimization.weight_decay" : args.lr_decay,
     "env.batch_size": args.batch_size,
     "optimization.optim_type": args.optim_type,
+    "optimization.lr_schedule":args.lr_schedule
     }
     
     num_trails = args.num_trials

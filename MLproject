@@ -22,6 +22,7 @@ entry_points:
       weight_decay: { type: str,  help: 'weight decay', default :  "0.03"}
       batch_size: { type: str,  help: 'batch size', default :  "32"}
       optim_type: { type: str,  help: 'adam/adamw/sgd', default :  "adam"}
+      lr_schedule: { type: str, help: 'cosine_decay/polynomial_decay/linear_decay', default : ""}
 
     command: "python autoMM.py \
     --target_column {target_column} \
@@ -36,9 +37,9 @@ entry_points:
     --metric {metric} \
     --lr {lr} \
     --lr_decay {lr_decay} \
+    --lr_schedule {lr_schedule} \
     --weight_decay {weight_decay} \
     --batch_size {batch_size} \
-    --optim_type {optim_type} \
     --optim_type {optim_type} \
     "
 
