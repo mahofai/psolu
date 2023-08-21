@@ -3,11 +3,13 @@ name: autoML
 conda_env: conda.yml
 
 entry_points:
-  main:
+  main: 
     parameters:
+      target_column: { type: str, help:'prediction target column', default: "solubility"}
+
       mode: { type: str, help: 'HPO bayes preset', choices: ["medium_quality", "best_quality","manual"], default: "medium_quality"}
-      train_data: { type: str, help: 'path to train data csv', default :  "./data/train.csv"}
-      test_data: { type: str, help: 'path to test data csv', default : "./data/test.csv"}
+      train_data: { type: str, help: 'path to train data csv', default :  "./data/soluprot/train.csv"}
+      test_data: { type: str, help: 'path to test data csv', default : "./data/soluprot/test.csv"}
       test_n_fold: { type: int, help: 'choose nth fold as validation set',default :  0}
       searcher: { type: str, help: 'grid/bayes/random', default : ""}
       num_trials: { type: int, help: 'HPO trials number', default :  2}
@@ -22,7 +24,9 @@ entry_points:
       optim_type: { type: str,  help: 'adam/adamw/sgd', default :  "adam"}
 
     command: "python autoMM.py \
+    --target_column {target_column} \
     --mode {mode} \
+    --train_data {train_data} \
     --test_data {test_data} \
     --test_n_fold {test_n_fold} \
     --searcher {searcher} \

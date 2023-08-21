@@ -24,16 +24,12 @@ from autogluon.multimodal import MultiModalPredictor
 from autogluon.common import space
 from sklearn.model_selection import train_test_split
 
-
-#TODO common train 
-#TODO HPO
-#TODO grid search HPO 
 #TODO cross validation
  
 parser = argparse.ArgumentParser(description='download parser')
+parser.add_argument('--target_column', type=str, help='prediction target column', default = "solubility")
 
 parser.add_argument('--mode', type=str, help='HPO bayes preset', choices = ["medium_quality", "best_quality","manual"], default = "manual")
-/user/mahaohui/autoML/git/psolu/AutogluonModels
 parser.add_argument('--train_data', type=str, help='path to train data csv', default = "./data/soluprot/train.csv")
 parser.add_argument('--test_data', type=str, help='path to train data csv', default = "./data/soluprot/test.csv")
 parser.add_argument('--test_n_fold', type=int, help='choose nth fold as validation set',default = 0)
@@ -188,8 +184,6 @@ if __name__ == "__main__" :
         print("auto !!!")
         custom_hyperparameters={
             "optimization.learning_rate": tune.uniform(1e-5, 0.1),
-            "optimization.lr_decay":tune.uniform(1e-5, 0.1),
-            "optimization.weight_decay": tune.uniform(1e-5, 0.1),
             "env.batch_size": tune.choice([16,32,64,128,256,512,1024,2048]),
             "optimization.optim_type": tune.choice(["adam"]),
             'model.hf_text.checkpoint_name': args.check_point_name,
@@ -202,13 +196,16 @@ if __name__ == "__main__" :
             hyperparameter_tune_kwargs["num_trials"] = 2
             print("medium quality!!!")
         elif  args.mode == "best_quality":
+
+            custom_hyperparameters["optimization.lr_decay"] = tune.uniform(1e-5, 0.1)
+            custom_hyperparameters["optimization.weight_decay"] = tune.uniform(1e-5, 0.1)
             hyperparameter_tune_kwargs["num_trials"] = 4
             print("best quality!!!")
         else:
             print("please choose medium or best quality!!!")
 
     with mlflow.start_run() as run:
-        predictor = MultiModalPredictor(label='solubility',eval_metric = args.metric)
+        predictor = MultiModalPredictor(label=args.target_column,eval_metric = args.metric)
         predictor.set_verbosity(4)
         predictor.fit(train_data = train_data, tuning_data =valid_data,
                     column_types = column_types,
@@ -226,17 +223,24 @@ if __name__ == "__main__" :
         predictor = mlflow.pyfunc.load_model(model_uri=model_info.model_uri).unwrap_python_model()
         
         print("test eval!!!!:")
-        test_eval = predictor.evaluate(test_data, metrics=["accuracy","balanced_accuracy","roc_auc","precision","mcc"])
-        print("test eval!!!!:",test_eval)
+        test_metrics = predictor.evaluate(test_data,metrics=[args.metric])
+        print("test eval!!!!:",test_metrics)
         
-        valid_eval = predictor.evaluate(valid_data, metrics=["accuracy","balanced_accuracy","roc_auc","precision","mcc"]) 
-        print("valid eval:",valid_eval)
+        # metrics=["accuracy","balanced_accuracy","roc_auc","precision","mcc","pearsonr"]
         
-        mlflow.log_metric("test_precision", test_eval["precision"]) # type: ignore
-        mlflow.log_metric("test_auc", test_eval["roc_auc"]) # type: ignore
-        mlflow.log_metric("test_balanced_acc", test_eval["accuracy"]) # type: ignore
-        mlflow.log_metric("test_balanced_acc", test_eval["balanced_accuracy"]) # type: ignore
-        mlflow.log_metric("test_mcc", test_eval["mcc"]) # type: ignore
+        valid_metrics = predictor.evaluate(valid_data,metrics=[args.metric]) 
+        print("valid eval:",valid_metrics)
+        
+        for k,v in valid_metrics.items():
+            log_metric('valid_'+k, v)
+        for k,v in test_metrics.items():
+            log_metric('test_'+k, v)
+        
+        # mlflow.log_metric("test_precision", test_metrics["precision"]) # type: ignore
+        # mlflow.log_metric("test_auc", test_metrics["roc_auc"]) # type: ignore
+        # mlflow.log_metric("test_balanced_acc", test_metrics["accuracy"]) # type: ignore
+        # mlflow.log_metric("test_balanced_acc", test_metrics["balanced_accuracy"]) # type: ignore
+        # mlflow.log_metric("test_mcc", test_metrics["mcc"]) # type: ignore
 
 # python autoMM.py  --train_data /user/mahaohui/autoML/autogluon/autogluon_examples/soluprot/data/train.csv   --test_data /user/mahaohui/autoML/autogluon/autogluon_examples/soluprot/data/test.csv  --test_n_fold 1 
 
