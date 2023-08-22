@@ -26,15 +26,16 @@ from sklearn.model_selection import train_test_split
 
 #TODO cross validation
  
-parser = argparse.ArgumentParser(description='download parser')
+parser = argparse.ArgumentParser(description='argument parser')
 # complusory settings
 parser.add_argument('--target_column', type=str, help='prediction target column', default = "solubility")
 parser.add_argument('--metric', type=str,  help='evaluation metric', default = "roc_auc")
+parser.add_argument('--train_data', type=str, help='path to train data csv', default = "./data/soluprot/train.csv")
+parser.add_argument('--test_data', type=str, help='path to train data csv', default = "./data/soluprot/test.csv")
+
 
 # HPO settings
 parser.add_argument('--mode', type=str, help='HPO bayes preset', choices = ["medium_quality", "best_quality","manual"], default = "manual")
-parser.add_argument('--train_data', type=str, help='path to train data csv', default = "./data/soluprot/train.csv")
-parser.add_argument('--test_data', type=str, help='path to train data csv', default = "./data/soluprot/test.csv")
 parser.add_argument('--test_n_fold', type=int, help='choose nth fold as validation set',default = 0)
 parser.add_argument('--searcher', type=str, help='grid/bayes/random', default = "")
 parser.add_argument('--num_trials', type=int, help='HPO trials number', default = 2)
@@ -47,8 +48,7 @@ parser.add_argument('--lr_decay', type=lambda x: [float(i) for i in x.split()], 
 parser.add_argument('--weight_decay', type=lambda x: [float(i) for i in x.split()], help='weight decay', default = [3e-6,0.3])
 parser.add_argument('--batch_size', type=lambda x: [int(i) for i in x.split()], help='batch size', default = [32])
 parser.add_argument('--optim_type', type=lambda x: [str(i) for i in x.split()], help='adam/adamw/sgd', default = ["adam"])
-parser.add_argument('--lr_schedule', type=lambda x: [str(i) for i in x.split()], help='cosine_decay/polynomial_decay/linear_decay', default = [""])
-
+parser.add_argument('--lr_schedule', type=lambda x: [str(i) for i in x.split()], help='cosine_decay/polynomial_decay/linear_decay', default = ["linear_decay"])
 
 args = parser.parse_args()
 
@@ -65,9 +65,8 @@ class AutogluonModel(mlflow.pyfunc.PythonModel):
     def predict(self, model_input):
         return self.predictor.predict(model_input)
     
-    def evaluate(self, model_input, metrics=["roc_auc"]):
-        print("!!!self.predictor.evaluate(model_input)")
-        return self.predictor.evaluate(model_input, metrics=metrics)
+    def evaluate(self, model_input, metrics):
+        return self.predictor.evaluate(model_input,metrics=metrics)
     
     def leaderboard(self, model_input):
         return self.predictor.leaderboard(model_input)
@@ -88,15 +87,11 @@ def check_sequence_type(sequence):
     else:
         return "Unknown"
 
-# 检查序列列的类型
 def find_sequence_columns(df):
-    # 存储符合条件的列名
     sequence_columns = []
-    # 迭代遍历数据框的列
     for column in df.columns:
         if df[column].dtype == 'object':
             column_type = df[column].head(50).apply(check_sequence_type).unique()
-        # 如果集合中只有一个唯一类型，并且该类型为 "DNA" 或 "Protein"，则将该列添加到结果列表中
             if len(column_type) == 1 and ("DNA" in column_type or "Protein" in column_type):
                 sequence_columns.append(column)
 
@@ -117,7 +112,7 @@ if __name__ == "__main__" :
 
         train_data = train_data.drop(["fold"],axis=1)
         valid_data = valid_data.drop(["fold"],axis=1)
-        # test_data = test_data.drop(["sid"],axis=1)
+
     else:
         train_data, valid_data = train_test_split(train_data, test_size=0.2, random_state=42)
         
@@ -131,8 +126,6 @@ if __name__ == "__main__" :
         column_types[seqs_column] = "text"
     print("column_types:",column_types)
     
-    #grid search
-
     custom_hyperparameters={
         "optimization.learning_rate": tune.uniform(args.lr[0], args.lr[-1]),
         "optimization.lr_decay":tune.uniform(args.lr_decay[0], args.lr_decay[-1]),
@@ -162,7 +155,6 @@ if __name__ == "__main__" :
         if args.searcher == "grid":
             print("grid search !!!")
             points=[i for i in ParameterGrid(grid_paras)]
-            print("points:",points, "len of points:", len(points))
             searcher = BasicVariantGenerator(constant_grid_search=True, points_to_evaluate = points)
             hyperparameter_tune_kwargs["searcher"] = searcher
             hyperparameter_tune_kwargs["scheduler"] = "ASHA"
@@ -187,7 +179,7 @@ if __name__ == "__main__" :
                         "env.num_gpus": 1,
                     }
     else:
-        print("auto !!!")
+        print("HPO preset !!!")
         custom_hyperparameters={
             "optimization.learning_rate": tune.uniform(1e-5, 0.1),
             "env.batch_size": tune.choice([16,32,64,128,256,512,1024,2048]),
@@ -199,7 +191,7 @@ if __name__ == "__main__" :
         hyperparameter_tune_kwargs["searcher"] = "bayes"
         hyperparameter_tune_kwargs["scheduler"] = "ASHA"
         if args.mode == "medium_quality":
-            hyperparameter_tune_kwargs["num_trials"] = 2
+            hyperparameter_tune_kwargs["num_trials"] = 2    
             print("medium quality!!!")
         elif  args.mode == "best_quality":
 
@@ -226,15 +218,25 @@ if __name__ == "__main__" :
         )
         print("model_info.model_uri:",model_info.model_uri)
 
-        predictor = mlflow.pyfunc.load_model(model_uri=model_info.model_uri).unwrap_python_model()
+        model = mlflow.pyfunc.load_model(model_uri=model_info.model_uri).unwrap_python_model()
         
-        print("test eval!!!!:")
-        test_metrics = predictor.evaluate(test_data,metrics=[args.metric])
+        eval_metrics = []
+        print("model.predictor.problem_type!!!!:",model.predictor.problem_type)
+        if model.predictor.problem_type == "binary" or model.predictor.problem_type == "multiclass":
+
+            eval_metrics=["balanced_accuracy","precision","mcc","f1","recall"]
+        elif model.predictor.problem_type == "regression":
+            eval_metrics = ["mae","rmse"]
+
+        if args.metric not in eval_metrics:
+            eval_metrics.append(args.metric)
+
+        test_metrics = model.evaluate(test_data, metrics=eval_metrics)
+
         print("test eval!!!!:",test_metrics)
+
         
-        # metrics=["accuracy","balanced_accuracy","roc_auc","precision","mcc","pearsonr"]
-        
-        valid_metrics = predictor.evaluate(valid_data,metrics=[args.metric]) 
+        valid_metrics = model.evaluate(valid_data, metrics=eval_metrics) 
         print("valid eval:",valid_metrics)
         
         for k,v in valid_metrics.items():
