@@ -211,32 +211,32 @@ if __name__ == "__main__" :
                     hyperparameter_tune_kwargs = hyperparameter_tune_kwargs
                     )
         
-        model = AutogluonModel(predictor)
+        # model = AutogluonModel(predictor)
         
-        model_info = mlflow.pyfunc.log_model(
-            artifact_path='1ag-model', python_model=model
-        )
-        print("model_info.model_uri:",model_info.model_uri)
+        # model_info = mlflow.pyfunc.log_model(
+        #     artifact_path='1ag-model', python_model=model
+        # )
+        # print("model_info.model_uri:",model_info.model_uri)
 
-        model = mlflow.pyfunc.load_model(model_uri=model_info.model_uri).unwrap_python_model()
+        # model = mlflow.pyfunc.load_model(model_uri=model_info.model_uri).unwrap_python_model()
         
         eval_metrics = []
-        print("model.predictor.problem_type!!!!:",model.predictor.problem_type)
-        if model.predictor.problem_type == "binary" or model.predictor.problem_type == "multiclass":
+        print("model.predictor.problem_type!!!!:",predictor.problem_type)
+        if predictor.problem_type == "binary" or predictor.problem_type == "multiclass":
 
             eval_metrics=["balanced_accuracy","precision","mcc","f1","recall"]
-        elif model.predictor.problem_type == "regression":
+        elif predictor.problem_type == "regression":
             eval_metrics = ["mae","rmse"]
 
         if args.metric not in eval_metrics:
             eval_metrics.append(args.metric)
 
-        test_metrics = model.evaluate(test_data, metrics=eval_metrics)
+        test_metrics = predictor.evaluate(test_data, metrics=eval_metrics)
 
         print("test eval!!!!:",test_metrics)
 
         
-        valid_metrics = model.evaluate(valid_data, metrics=eval_metrics) 
+        valid_metrics = predictor.evaluate(valid_data, metrics=eval_metrics) 
         print("valid eval:",valid_metrics)
         
         for k,v in valid_metrics.items():
