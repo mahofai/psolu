@@ -28,10 +28,10 @@ from sklearn.model_selection import train_test_split
  
 parser = argparse.ArgumentParser(description='argument parser')
 # complusory settings
-parser.add_argument('--target_column', type=str, help='prediction target column', default = "solubility")
-parser.add_argument('--metric', type=str,  help='evaluation metric', default = "roc_auc")
-parser.add_argument('--train_data', type=str, help='path to train data csv', default = "./data/soluprot/train.csv")
-parser.add_argument('--test_data', type=str, help='path to train data csv', default = "./data/soluprot/test.csv")
+parser.add_argument('--target_column', type=str, help='prediction target column', default = "Dev")
+parser.add_argument('--metric', type=str,  help='evaluation metric', default = "pearsonr")
+parser.add_argument('--train_data', type=str, help='path to train data csv', default = "./data/dna_activity/train.csv")
+parser.add_argument('--test_data', type=str, help='path to train data csv', default = "./data/dna_activity/test.csv")
 
 
 # HPO settings
@@ -211,32 +211,33 @@ if __name__ == "__main__" :
                     hyperparameter_tune_kwargs = hyperparameter_tune_kwargs
                     )
         
-        # model = AutogluonModel(predictor)
+        model = AutogluonModel(predictor)
         
-        # model_info = mlflow.pyfunc.log_model(
-        #     artifact_path='1ag-model', python_model=model
-        # )
+        mlflow.pyfunc.log_model(
+            artifact_path='1ag-model', python_model=model,
+            registered_model_name="psolu_Model"
+        )
         # print("model_info.model_uri:",model_info.model_uri)
 
         # model = mlflow.pyfunc.load_model(model_uri=model_info.model_uri).unwrap_python_model()
         
         eval_metrics = []
-        print("model.predictor.problem_type!!!!:",predictor.problem_type)
-        if predictor.problem_type == "binary" or predictor.problem_type == "multiclass":
+        print("model.predictor.problem_type!!!!:",model.predictor.problem_type)
+        if model.predictor.problem_type == "binary" or model.predictor.problem_type == "multiclass":
 
             eval_metrics=["balanced_accuracy","precision","mcc","f1","recall"]
-        elif predictor.problem_type == "regression":
-            eval_metrics = ["mae","rmse"]
+        elif model.predictor.problem_type == "regression":
+            eval_metrics = ["mae","rmse","r2"]
 
         if args.metric not in eval_metrics:
             eval_metrics.append(args.metric)
 
-        test_metrics = predictor.evaluate(test_data, metrics=eval_metrics)
+        test_metrics = model.evaluate(test_data, metrics=eval_metrics)
 
         print("test eval!!!!:",test_metrics)
 
         
-        valid_metrics = predictor.evaluate(valid_data, metrics=eval_metrics) 
+        valid_metrics = model.evaluate(valid_data, metrics=eval_metrics) 
         print("valid eval:",valid_metrics)
         
         for k,v in valid_metrics.items():

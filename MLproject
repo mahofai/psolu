@@ -6,7 +6,7 @@ entry_points:
   main: 
     parameters:
       target_column: { type: str, help:'prediction target column', default: "solubility"}
-      mode: { type: str, help: 'HPO bayes preset', choices: ["medium_quality", "best_quality","manual"], default: "medium_quality"}
+      mode: { type: str, help: 'HPO bayes preset', choices: ["medium_quality", "best_quality","manual"], default: "manual"}
       train_data: { type: str, help: 'path to train data csv', default :  "./data/soluprot/train.csv"}
       test_data: { type: str, help: 'path to test data csv', default : "./data/soluprot/test.csv"}
       test_n_fold: { type: int, help: 'choose nth fold as validation set',default :  0}
