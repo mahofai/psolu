@@ -1,5 +1,9 @@
 import os
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+import tqdm
+import numpy as np
+import json
+from mlflow.models import ModelSignature
 
 from autogluon.tabular import TabularDataset, TabularPredictor
 from autogluon.core.utils.loaders import load_pd
@@ -51,6 +55,64 @@ parser.add_argument('--optim_type', type=lambda x: [str(i) for i in x.split()], 
 parser.add_argument('--lr_schedule', type=lambda x: [str(i) for i in x.split()], help='cosine_decay/polynomial_decay/linear_decay', default = ["linear_decay"])
 
 args = parser.parse_args()
+
+class SoluProtPyModel(mlflow.pyfunc.PythonModel):
+
+    # def __init__(self, predictor, ps_featurize, signature):
+    
+    #     self.predictor = predictor
+    #     self.ps_featurize = ps_featurize
+    #     self.class SoluProtPyModel(mlflow.pyfunc.PythonModel):
+
+    def __init__(self, predictor, signature):
+    
+        self.predictor = predictor
+        # self.ps_featurize = ps_featurize
+        self.signature = signature
+        self.input_names, self.output_names = signature.inputs.input_names(), signature.outputs.input_names()
+        
+    def evaluate(self,  model_input, metrics):
+        return self.predictor.evaluate(model_input,metrics=metrics)
+    
+    def predict(self,  model_input):
+        
+        '''
+        context:
+            a instance of PythonModelContext
+            PythonModelContext对象由save_model() 和log_model()持久化方法隐式创建, 使用这些方法的artifacts参数指定的内容
+        model_input:
+            if request from flask, it will be a dataframe format
+            model_input: [pandas.DataFrame, numpy.ndarray, scipy.sparse.(csc.csc_matrix | csr.csr_matrix),
+            
+        return 
+            -> [numpy.ndarray | pandas.(Series | DataFrame) | List]
+        '''
+        outputs = {}
+        inputs = model_input[self.input_names]
+        preds = []
+        for idx in tqdm(range(len(inputs))):
+            row = inputs.iloc[idx]
+            data_dict = self.featurize_mlflow(row)
+            for key in data_dict:
+                data_dict[key] = data_dict[key].to(self.predictor.device)
+            pred = self.predictor.predict(data_dict, postprocess=True).tolist()[0]
+            preds.append(pred)
+        preds = np.array(preds).reshape(len(self.output_names), -1)
+        for idx, name in enumerate(self.output_names):
+            outputs[name] = preds[idx]
+        return outputs
+    
+    def featurize_mlflow(self, row):
+        seq = row['seq']
+        data_dict = {}
+        # data = self.ps_featurize.featurize(seq)
+        data_dict['input'] = seq
+        return data_dict
+    
+inp = json.dumps([{'name': 'seq','type':'string'}])
+oup = json.dumps([{'name': 'score','type':'double'}])
+signature = ModelSignature.from_dict({'inputs': inp, 'outputs': oup})
+
 
 class AutogluonModel(mlflow.pyfunc.PythonModel):
 
@@ -211,12 +273,15 @@ if __name__ == "__main__" :
                     hyperparameter_tune_kwargs = hyperparameter_tune_kwargs
                     )
         
-        model = AutogluonModel(predictor)
+        # model = AutogluonModel(predictor)
+        model=SoluProtPyModel(predictor, signature)
         
         mlflow.pyfunc.log_model(
-            artifact_path='1ag-model', python_model=model,
-            registered_model_name="psolu_Model"
+            artifact_path='model', python_model=model,
+            registered_model_name="model"
         )
+        
+        
         # print("model_info.model_uri:",model_info.model_uri)
 
         # model = mlflow.pyfunc.load_model(model_uri=model_info.model_uri).unwrap_python_model()
@@ -232,12 +297,12 @@ if __name__ == "__main__" :
         if args.metric not in eval_metrics:
             eval_metrics.append(args.metric)
 
-        test_metrics = model.evaluate(test_data, metrics=eval_metrics)
+        test_metrics = model.evaluate(model_input=test_data, metrics=eval_metrics)
 
         print("test eval!!!!:",test_metrics)
 
         
-        valid_metrics = model.evaluate(valid_data, metrics=eval_metrics) 
+        valid_metrics = model.evaluate(model_input=valid_data, metrics=eval_metrics) 
         print("valid eval:",valid_metrics)
         
         for k,v in valid_metrics.items():
