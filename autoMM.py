@@ -12,7 +12,7 @@ import pandas as pd
 from autogluon.common.features.types import R_INT,R_FLOAT,R_OBJECT,R_CATEGORY,S_TEXT_AS_CATEGORY 
 
 from autogluon.features.generators import CategoryFeatureGenerator, AsTypeFeatureGenerator, BulkFeatureGenerator, DropUniqueFeatureGenerator, FillNaFeatureGenerator, PipelineFeatureGenerator, OneHotEncoderFeatureGenerator,IdentityFeatureGenerator
-
+from feature_generator import count_charge_Generator, net_charge_Generator, one_hot_Generator
 import sys
 from sklearn.model_selection import ParameterGrid
 from ray import tune
@@ -27,6 +27,9 @@ from ray.tune.search.basic_variant import BasicVariantGenerator
 from autogluon.multimodal import MultiModalPredictor
 from autogluon.common import space
 from sklearn.model_selection import train_test_split
+
+from zipfile import ZipFile
+import os
 
 #TODO cross validation
  
@@ -54,6 +57,8 @@ parser.add_argument('--batch_size', type=lambda x: [int(i) for i in x.split()], 
 parser.add_argument('--optim_type', type=lambda x: [str(i) for i in x.split()], help='adam/adamw/sgd', default = ["adam"])
 parser.add_argument('--lr_schedule', type=lambda x: [str(i) for i in x.split()], help='cosine_decay/polynomial_decay/linear_decay', default = ["linear_decay"])
 
+parser.add_argument('--tabular', type=bool, help='tabular predictor', default = 1)
+
 args = parser.parse_args()
 
 class SoluProtPyModel(mlflow.pyfunc.PythonModel):
@@ -71,8 +76,11 @@ class SoluProtPyModel(mlflow.pyfunc.PythonModel):
         self.signature = signature
         self.input_names, self.output_names = signature.inputs.input_names(), signature.outputs.input_names()
         
-    def evaluate(self,  model_input, metrics):
-        return self.predictor.evaluate(model_input,metrics=metrics)
+    def evaluate(self,  model_input, metrics=[]):
+        if  len(metrics) > 1:
+            return self.predictor.evaluate(model_input,metrics=metrics)
+        else:
+            return self.predictor.evaluate(model_input)
     
     def predict(self,  model_input):
         
@@ -130,8 +138,6 @@ class AutogluonModel(mlflow.pyfunc.PythonModel):
     def evaluate(self, model_input, metrics):
         return self.predictor.evaluate(model_input,metrics=metrics)
     
-    def leaderboard(self, model_input):
-        return self.predictor.leaderboard(model_input)
 
 def check_sequence_type(sequence):
 
@@ -163,7 +169,7 @@ if __name__ == "__main__" :
     
     train_data = pd.read_csv(args.train_data)
     test_data = pd.read_csv(args.test_data)
-    train_data = train_data[:200]
+    train_data = train_data[:500]
     test_data = test_data[:200]
     print("!!!args.lr:",args.lr)
         
@@ -172,8 +178,8 @@ if __name__ == "__main__" :
         train_data = train_data[train_data["fold"] != args.test_n_fold]
         print("args.test_n_fold:",args.test_n_fold)
 
-        train_data = train_data.drop(["fold"],axis=1)
-        valid_data = valid_data.drop(["fold"],axis=1)
+        # train_data = train_data.drop(["fold"],axis=1)
+        # valid_data = valid_data.drop(["fold"],axis=1)
 
     else:
         train_data, valid_data = train_test_split(train_data, test_size=0.2, random_state=42)
@@ -265,31 +271,57 @@ if __name__ == "__main__" :
             print("please choose medium or best quality!!!")
 
     with mlflow.start_run() as run:
-        predictor = MultiModalPredictor(label=args.target_column,eval_metric = args.metric)
-        predictor.set_verbosity(4)
-        predictor.fit(train_data = train_data, tuning_data =valid_data,
-                    column_types = column_types,
-                    hyperparameters=custom_hyperparameters,
-                    hyperparameter_tune_kwargs = hyperparameter_tune_kwargs
-                    )
+        if args.tabular:
+            train_feature_generator = PipelineFeatureGenerator(
+                generators=[
+                    [   one_hot_Generator(verbosity=3,features_in=['seq'],seq_type = "dna"),
+                        IdentityFeatureGenerator(infer_features_in_args=dict(
+                            valid_raw_types=[R_INT, R_FLOAT])),
+                    ],
+                    
+                ],
+                verbosity=3,
+                post_drop_duplicates=False,
+                post_generators=[IdentityFeatureGenerator()]
+            )
+            concatenated_df  = pd.concat([train_data,test_data,valid_data], axis=0)
+            one_hot_all_data = train_feature_generator.fit_transform(X=concatenated_df)
+
+            one_hot_train_data = one_hot_all_data[:len(train_data)]
+            test_data = one_hot_all_data[len(train_data):]
+
+            valid_data = one_hot_train_data[one_hot_train_data["fold"] ==0.0]
+            train_data = one_hot_train_data[one_hot_train_data["fold"] !=0.0]
+            
+            train_data = train_data.drop(["fold"],axis=1)
+            valid_data = valid_data.drop(["fold"],axis=1)
+            test_data = test_data.drop(["fold"],axis=1)
+            
+            predictor = TabularPredictor(label=args.target_column,eval_metric = args.metric)
+            predictor.fit(train_data = train_data, tuning_data =valid_data)
+        else:
+            predictor = MultiModalPredictor(label=args.target_column,eval_metric = args.metric)
+            # predictor.set_verbosity(4)
+            predictor.fit(train_data = train_data, tuning_data =valid_data,
+                        column_types = column_types,
+                        hyperparameters=custom_hyperparameters,
+                        hyperparameter_tune_kwargs = hyperparameter_tune_kwargs
+                        )
         
         # model = AutogluonModel(predictor)
         model=SoluProtPyModel(predictor, signature)
         
-        mlflow.pyfunc.log_model(
+        model_info = mlflow.pyfunc.log_model(
             artifact_path='model', python_model=model,
             registered_model_name="model"
         )
         
-        
-        # print("model_info.model_uri:",model_info.model_uri)
 
         # model = mlflow.pyfunc.load_model(model_uri=model_info.model_uri).unwrap_python_model()
         
         eval_metrics = []
         print("model.predictor.problem_type!!!!:",model.predictor.problem_type)
         if model.predictor.problem_type == "binary" or model.predictor.problem_type == "multiclass":
-
             eval_metrics=["balanced_accuracy","precision","mcc","f1","recall"]
         elif model.predictor.problem_type == "regression":
             eval_metrics = ["mae","rmse","r2"]
@@ -297,18 +329,23 @@ if __name__ == "__main__" :
         if args.metric not in eval_metrics:
             eval_metrics.append(args.metric)
 
-        test_metrics = model.evaluate(model_input=test_data, metrics=eval_metrics)
-
-        print("test eval!!!!:",test_metrics)
-
+        if args.tabular:
+            test_metrics = model.evaluate(test_data)
+            print("test eval!!!!:",test_metrics)
+            # valid_metrics = model.evaluate(valid_data) 
+            # print("valid eval:",valid_metrics)
+        else:
+            test_metrics = model.evaluate(model_input=test_data, metrics=eval_metrics)
+            print("test eval!!!!:",test_metrics)
+            valid_metrics = model.evaluate(model_input=valid_data, metrics=eval_metrics) 
+            print("valid eval:",valid_metrics)
         
-        valid_metrics = model.evaluate(model_input=valid_data, metrics=eval_metrics) 
-        print("valid eval:",valid_metrics)
-        
-        for k,v in valid_metrics.items():
-            log_metric('valid_'+k, v)
+        # for k,v in valid_metrics.items():
+        #     log_metric('valid_'+k, v)
         for k,v in test_metrics.items():
             log_metric('test_'+k, v)
+            
+
         
         # mlflow.log_metric("test_precision", test_metrics["precision"]) # type: ignore
         # mlflow.log_metric("test_auc", test_metrics["roc_auc"]) # type: ignore

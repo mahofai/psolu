@@ -264,7 +264,7 @@ class kmer_featurization:
         return numbering
 
 class kmers_Generator(AbstractFeatureGenerator):
-    def __init__(self, k, write_number_of_occurrences, **kwargs):
+    def __init__(self, k=4, write_number_of_occurrences=False, **kwargs):
         super().__init__(**kwargs)
         self.k = k
         self.write_number_of_occurrences = write_number_of_occurrences

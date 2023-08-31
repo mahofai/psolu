@@ -22,6 +22,7 @@ entry_points:
       batch_size: { type: str,  help: 'batch size', default :  "32"}
       optim_type: { type: str,  help: 'adam/adamw/sgd', default :  "adam"}
       lr_schedule: { type: str, help: 'cosine_decay/polynomial_decay/linear_decay', default : ""}
+      tabular: { type: bool, help: 'flag of tabualr ', default : 1}
 
     command: "python autoMM.py \
     --target_column {target_column} \
@@ -40,6 +41,7 @@ entry_points:
     --weight_decay {weight_decay} \
     --batch_size {batch_size} \
     --optim_type {optim_type} \
+    --tabular {tabular} \
     "
 
 
