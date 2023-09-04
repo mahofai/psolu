@@ -35,7 +35,7 @@ import os
  
 parser = argparse.ArgumentParser(description='argument parser')
 # complusory settings
-parser.add_argument('--target_column', type=str, help='prediction target column', default = "Dev")
+parser.add_argument('--target_column', type=str, help='prediction target column', default = "Hk")
 parser.add_argument('--metric', type=str,  help='evaluation metric', default = "pearsonr")
 parser.add_argument('--train_data', type=str, help='path to train data csv', default = "./data/dna_activity/train.csv")
 parser.add_argument('--test_data', type=str, help='path to train data csv', default = "./data/dna_activity/test.csv")
@@ -46,7 +46,7 @@ parser.add_argument('--mode', type=str, help='HPO bayes preset', choices = ["med
 parser.add_argument('--test_n_fold', type=int, help='choose nth fold as validation set',default = 0)
 parser.add_argument('--searcher', type=str, help='grid/bayes/random', default = "")
 parser.add_argument('--num_trials', type=int, help='HPO trials number', default = 2)
-parser.add_argument('--check_point_name', type=str, help='huggingface_checkpoint', default = "facebook/esm2_t6_8M_UR50D")
+parser.add_argument('--check_point_name', type=str, help='huggingface_checkpoint', default = "/user/mahaohui/autoML/git/psolu/esm2_t6_8M_UR50D")
 parser.add_argument('--max_epochs', type=int,  help='max traning epoch', default = 2)
 
 # parameters settings
@@ -57,7 +57,7 @@ parser.add_argument('--batch_size', type=lambda x: [int(i) for i in x.split()], 
 parser.add_argument('--optim_type', type=lambda x: [str(i) for i in x.split()], help='adam/adamw/sgd', default = ["adam"])
 parser.add_argument('--lr_schedule', type=lambda x: [str(i) for i in x.split()], help='cosine_decay/polynomial_decay/linear_decay', default = ["linear_decay"])
 
-parser.add_argument('--tabular', type=bool, help='tabular predictor', default = 1)
+parser.add_argument('--tabular', type=bool, help='tabular predictor', default = 0)
 
 args = parser.parse_args()
 
@@ -95,19 +95,23 @@ class SoluProtPyModel(mlflow.pyfunc.PythonModel):
         return 
             -> [numpy.ndarray | pandas.(Series | DataFrame) | List]
         '''
-        outputs = {}
-        inputs = model_input[self.input_names]
-        preds = []
-        for idx in tqdm(range(len(inputs))):
-            row = inputs.iloc[idx]
-            data_dict = self.featurize_mlflow(row)
-            for key in data_dict:
-                data_dict[key] = data_dict[key].to(self.predictor.device)
-            pred = self.predictor.predict(data_dict, postprocess=True).tolist()[0]
-            preds.append(pred)
-        preds = np.array(preds).reshape(len(self.output_names), -1)
-        for idx, name in enumerate(self.output_names):
-            outputs[name] = preds[idx]
+        # outputs = {}
+        # inputs = model_input[self.input_names]
+        # preds = []
+        # for idx in range(len(inputs)):
+        #     row = inputs.iloc[idx]
+        #     data_dict = self.featurize_mlflow(row)
+        #     for key in data_dict:
+        #         data_dict[key] = data_dict[key].to(self.predictor.device)
+        #     pred = self.predictor.predict(data_dict, postprocess=True).tolist()[0]
+        #     preds.append(pred)
+        # preds = np.array(preds).reshape(len(self.output_names), -1)
+        # for idx, name in enumerate(self.output_names):
+        #     outputs[name] = preds[idx]
+        print("model_input:", model_input)
+        
+        outputs = self.predictor.predict(model_input)
+        print("outputs:",outputs)
         return outputs
     
     def featurize_mlflow(self, row):
@@ -116,7 +120,7 @@ class SoluProtPyModel(mlflow.pyfunc.PythonModel):
         # data = self.ps_featurize.featurize(seq)
         data_dict['input'] = seq
         return data_dict
-    
+
 inp = json.dumps([{'name': 'seq','type':'string'}])
 oup = json.dumps([{'name': 'score','type':'double'}])
 signature = ModelSignature.from_dict({'inputs': inp, 'outputs': oup})
@@ -178,8 +182,7 @@ if __name__ == "__main__" :
         train_data = train_data[train_data["fold"] != args.test_n_fold]
         print("args.test_n_fold:",args.test_n_fold)
 
-        # train_data = train_data.drop(["fold"],axis=1)
-        # valid_data = valid_data.drop(["fold"],axis=1)
+
 
     else:
         train_data, valid_data = train_test_split(train_data, test_size=0.2, random_state=42)
@@ -272,9 +275,10 @@ if __name__ == "__main__" :
 
     with mlflow.start_run() as run:
         if args.tabular:
+            print("feature engineering processing!!!")
             train_feature_generator = PipelineFeatureGenerator(
                 generators=[
-                    [   one_hot_Generator(verbosity=3,features_in=['seq'],seq_type = "dna"),
+                    [   one_hot_Generator(verbosity=3,features_in=['seq'],seq_type = "protein"),
                         IdentityFeatureGenerator(infer_features_in_args=dict(
                             valid_raw_types=[R_INT, R_FLOAT])),
                     ],
@@ -300,6 +304,9 @@ if __name__ == "__main__" :
             predictor = TabularPredictor(label=args.target_column,eval_metric = args.metric)
             predictor.fit(train_data = train_data, tuning_data =valid_data)
         else:
+            train_data = train_data.drop(["fold"],axis=1)
+            valid_data = valid_data.drop(["fold"],axis=1)
+            
             predictor = MultiModalPredictor(label=args.target_column,eval_metric = args.metric)
             # predictor.set_verbosity(4)
             predictor.fit(train_data = train_data, tuning_data =valid_data,
@@ -307,9 +314,10 @@ if __name__ == "__main__" :
                         hyperparameters=custom_hyperparameters,
                         hyperparameter_tune_kwargs = hyperparameter_tune_kwargs
                         )
+            
         
         # model = AutogluonModel(predictor)
-        model=SoluProtPyModel(predictor, signature)
+        model=SoluProtPyModel(predictor = predictor, signature = signature)
         
         model_info = mlflow.pyfunc.log_model(
             artifact_path='model', python_model=model,

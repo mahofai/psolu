@@ -14,7 +14,7 @@ entry_points:
       num_trials: { type: int, help: 'HPO trials number', default :  2}
       check_point_name: { type: str, help: 'huggingface_checkpoint', default : "facebook/esm2_t6_8M_UR50D"}
       max_epochs: { type: int,  help: 'max traning epoch', default : 2}
-      metric: { type: str, help: 'evaluation metric', default : "roc_auc"}
+      metric: { type: str, help: 'evaluation metric', default : "precision"}
 
       lr: { type: str,  help: 'learning rate', default : "0.01"}
       lr_decay: { type: str,  help: 'learning rate decay', default :  "0.02"}
@@ -22,7 +22,7 @@ entry_points:
       batch_size: { type: str,  help: 'batch size', default :  "32"}
       optim_type: { type: str,  help: 'adam/adamw/sgd', default :  "adam"}
       lr_schedule: { type: str, help: 'cosine_decay/polynomial_decay/linear_decay', default : ""}
-      tabular: { type: bool, help: 'flag of tabualr ', default : 1}
+      # tabular: { type: int, help: 'flag of tabualr ', default : 0}
 
     command: "python autoMM.py \
     --target_column {target_column} \
@@ -41,7 +41,7 @@ entry_points:
     --weight_decay {weight_decay} \
     --batch_size {batch_size} \
     --optim_type {optim_type} \
-    --tabular {tabular} \
-    "
 
+    "
+    # --tabular {tabular} \
 
