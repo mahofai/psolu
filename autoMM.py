@@ -75,6 +75,8 @@ class SoluProtPyModel(mlflow.pyfunc.PythonModel):
         # self.ps_featurize = ps_featurize
         self.signature = signature
         self.input_names, self.output_names = signature.inputs.input_names(), signature.outputs.input_names()
+
+
         
     def evaluate(self,  model_input, metrics=[]):
         if  len(metrics) > 1:
@@ -82,7 +84,9 @@ class SoluProtPyModel(mlflow.pyfunc.PythonModel):
         else:
             return self.predictor.evaluate(model_input)
     
-    def predict(self,  model_input):
+    def predict(self, context, model_input):
+        
+        print("context:", context)
         
         '''
         context:
