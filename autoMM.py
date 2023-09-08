@@ -63,20 +63,8 @@ args = parser.parse_args()
 
 class SoluProtPyModel(mlflow.pyfunc.PythonModel):
 
-    # def __init__(self, predictor, ps_featurize, signature):
-    
-    #     self.predictor = predictor
-    #     self.ps_featurize = ps_featurize
-    #     self.class SoluProtPyModel(mlflow.pyfunc.PythonModel):
-
-    def __init__(self, predictor, signature):
-    
+    def __init__(self, predictor):
         self.predictor = predictor
-        # self.ps_featurize = ps_featurize
-        self.signature = signature
-        self.input_names, self.output_names = signature.inputs.input_names(), signature.outputs.input_names()
-
-
         
     def evaluate(self,  model_input, metrics=[]):
         if  len(metrics) > 1:
@@ -86,44 +74,9 @@ class SoluProtPyModel(mlflow.pyfunc.PythonModel):
     
     def predict(self, context, model_input):
         
-        print("context:", context)
-        
-        '''
-        context:
-            a instance of PythonModelContext
-            PythonModelContext对象由save_model() 和log_model()持久化方法隐式创建, 使用这些方法的artifacts参数指定的内容
-        model_input:
-            if request from flask, it will be a dataframe format
-            model_input: [pandas.DataFrame, numpy.ndarray, scipy.sparse.(csc.csc_matrix | csr.csr_matrix),
-            
-        return 
-            -> [numpy.ndarray | pandas.(Series | DataFrame) | List]
-        '''
-        # outputs = {}
-        # inputs = model_input[self.input_names]
-        # preds = []
-        # for idx in range(len(inputs)):
-        #     row = inputs.iloc[idx]
-        #     data_dict = self.featurize_mlflow(row)
-        #     for key in data_dict:
-        #         data_dict[key] = data_dict[key].to(self.predictor.device)
-        #     pred = self.predictor.predict(data_dict, postprocess=True).tolist()[0]
-        #     preds.append(pred)
-        # preds = np.array(preds).reshape(len(self.output_names), -1)
-        # for idx, name in enumerate(self.output_names):
-        #     outputs[name] = preds[idx]
-        print("model_input:", model_input)
-        
         outputs = self.predictor.predict(model_input)
-        print("outputs:",outputs)
         return outputs
-    
-    def featurize_mlflow(self, row):
-        seq = row['seq']
-        data_dict = {}
-        # data = self.ps_featurize.featurize(seq)
-        data_dict['input'] = seq
-        return data_dict
+
 
 inp = json.dumps([{'name': 'seq','type':'string'}])
 oup = json.dumps([{'name': 'score','type':'double'}])
@@ -135,10 +88,6 @@ class AutogluonModel(mlflow.pyfunc.PythonModel):
     def __init__(self, predictor):
         self.predictor = predictor
         
-    # def load_context(self, context):
-    #     print("Loading context")
-    #     # self.predictor = TabularPredictor.load(context.artifacts.get("predictor_path"))
-    #     self.predictor = context.artifacts.get("predictor_path")
     
     def predict(self, model_input):
         return self.predictor.predict(model_input)
