@@ -277,8 +277,8 @@ if __name__ == "__main__" :
         )
             # signature = signature
 
-        model = mlflow.pyfunc.load_model(model_uri=model_info.model_uri).unwrap_python_model()
-        prediction = model.predict(test_data)
+        # model = mlflow.pyfunc.load_model(model_uri=model_info.model_uri).unwrap_python_model()
+        # prediction = model.predict(test_data)
         
         eval_metrics = []
         print("model.predictor.problem_type!!!!:",model.predictor.problem_type)
