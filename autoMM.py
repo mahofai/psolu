@@ -64,6 +64,7 @@ args = parser.parse_args()
 class SoluProtPyModel(mlflow.pyfunc.PythonModel):
 
     def __init__(self, predictor):
+    
         self.predictor = predictor
         
     def evaluate(self,  model_input, metrics=[]):
@@ -123,11 +124,10 @@ def find_sequence_columns(df):
     return sequence_columns
 
 if __name__ == "__main__" : 
-    
     train_data = pd.read_csv(args.train_data)
     test_data = pd.read_csv(args.test_data)
-    train_data = train_data[:500]
-    test_data = test_data[:200]
+    # train_data = train_data[:500]
+    # test_data = test_data[:200]
     print("!!!args.lr:",args.lr)
         
     if args.test_n_fold != -1:
@@ -267,18 +267,18 @@ if __name__ == "__main__" :
                         hyperparameters=custom_hyperparameters,
                         hyperparameter_tune_kwargs = hyperparameter_tune_kwargs
                         )
-            
         
         # model = AutogluonModel(predictor)
-        model=SoluProtPyModel(predictor = predictor, signature = signature)
+        model=SoluProtPyModel(predictor = predictor)
         
         model_info = mlflow.pyfunc.log_model(
             artifact_path='model', python_model=model,
-            registered_model_name="model"
+            registered_model_name="model",
         )
-        
+            # signature = signature
 
-        # model = mlflow.pyfunc.load_model(model_uri=model_info.model_uri).unwrap_python_model()
+        model = mlflow.pyfunc.load_model(model_uri=model_info.model_uri).unwrap_python_model()
+        prediction = model.predict(test_data)
         
         eval_metrics = []
         print("model.predictor.problem_type!!!!:",model.predictor.problem_type)
