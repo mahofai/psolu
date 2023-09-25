@@ -3,7 +3,7 @@ import tqdm
 import numpy as np
 import json
 from mlflow.models import ModelSignature
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+# os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 from autogluon.tabular import TabularDataset, TabularPredictor
 from autogluon.core.utils.loaders import load_pd
 import pandas as pd

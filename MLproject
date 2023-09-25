@@ -1,20 +1,18 @@
 name: autoML
 
-conda_env: conda.yml
+conda_env: automl.yml
 
 entry_points:
   main: 
     parameters:
-      target_column: { type: str, help:'prediction target column', default: "solubility"}
+      target_column: { type: str, help:'prediction target column', default: "ddG"}
       mode: { type: str, help: 'HPO bayes preset', choices: ["medium_quality", "best_quality","manual"], default: "manual"}
-      train_data: { type: str, help: 'path to train data csv', default :  "./data/soluprot/train.csv"}
-      test_data: { type: str, help: 'path to test data csv', default : "./data/soluprot/test.csv"}
-      test_n_fold: { type: int, help: 'choose nth fold as validation set',default :  0}
+      data: { type: str, help: 'path to data csv', default :  "./data/ddg.csv"}
       searcher: { type: str, help: 'grid/bayes/random', default : ""}
       num_trials: { type: int, help: 'HPO trials number', default :  2}
       check_point_name: { type: str, help: 'huggingface_checkpoint', default : "facebook/esm2_t6_8M_UR50D"}
       max_epochs: { type: int,  help: 'max traning epoch', default : 2}
-      metric: { type: str, help: 'evaluation metric', default : "precision"}
+      metric: { type: str, help: 'evaluation metric', default : "pearsonr"}
 
       lr: { type: str,  help: 'learning rate', default : "0.01"}
       lr_decay: { type: str,  help: 'learning rate decay', default :  "0.02"}
@@ -27,9 +25,7 @@ entry_points:
     command: "python autoMM.py \
     --target_column {target_column} \
     --mode {mode} \
-    --train_data {train_data} \
-    --test_data {test_data} \
-    --test_n_fold {test_n_fold} \
+    --data {data} \
     --searcher {searcher} \
     --num_trials {num_trials} \
     --check_point_name {check_point_name} \
@@ -43,5 +39,4 @@ entry_points:
     --optim_type {optim_type} \
     --tabular {tabular} \
     "
-    
 
