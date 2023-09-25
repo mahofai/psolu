@@ -1,10 +1,9 @@
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 import tqdm
 import numpy as np
 import json
 from mlflow.models import ModelSignature
-
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 from autogluon.tabular import TabularDataset, TabularPredictor
 from autogluon.core.utils.loaders import load_pd
 import pandas as pd
@@ -31,41 +30,54 @@ from sklearn.model_selection import train_test_split
 from zipfile import ZipFile
 import os
 
-#TODO cross validation
+'''
+data format: one csv file, split data with "split" column (train/test/valid)
+'''
  
 parser = argparse.ArgumentParser(description='argument parser')
 # complusory settings
-parser.add_argument('--target_column', type=str, help='prediction target column', default = "Hk")
-parser.add_argument('--metric', type=str,  help='evaluation metric', default = "pearsonr")
-parser.add_argument('--train_data', type=str, help='path to train data csv', default = "./data/dna_activity/train.csv")
-parser.add_argument('--test_data', type=str, help='path to train data csv', default = "./data/dna_activity/test.csv")
-
+parser.add_argument('--target_column', type=str, help='prediction target column', default = "solubility")
+parser.add_argument('--metric', type=str,  help='evaluation metric', default = "precision")
+parser.add_argument('--data', type=str, help='path to train data csv', default = "./data/soluprot.csv")
 
 # HPO settings
 parser.add_argument('--mode', type=str, help='HPO bayes preset', choices = ["medium_quality", "best_quality","manual"], default = "manual")
-parser.add_argument('--test_n_fold', type=int, help='choose nth fold as validation set',default = 0)
 parser.add_argument('--searcher', type=str, help='grid/bayes/random', default = "")
 parser.add_argument('--num_trials', type=int, help='HPO trials number', default = 2)
-parser.add_argument('--check_point_name', type=str, help='huggingface_checkpoint', default = "/user/mahaohui/autoML/git/psolu/esm2_t6_8M_UR50D")
-parser.add_argument('--max_epochs', type=int,  help='max traning epoch', default = 2)
+parser.add_argument('--check_point_name', type=str, help='huggingface_checkpoint', default = "facebook/esm2_t6_8M_UR50D")
+parser.add_argument('--max_epochs', type=int,  help='max traning epoch', default = 20)
 
 # parameters settings
-parser.add_argument('--lr', type=lambda x: [float(i) for i in x.split()], default = [1e-6,0.1])
-parser.add_argument('--lr_decay', type=lambda x: [float(i) for i in x.split()], help='learning rate decay', default = [2e-6,0.2])
-parser.add_argument('--weight_decay', type=lambda x: [float(i) for i in x.split()], help='weight decay', default = [3e-6,0.3])
-parser.add_argument('--batch_size', type=lambda x: [int(i) for i in x.split()], help='batch size', default = [32])
-parser.add_argument('--optim_type', type=lambda x: [str(i) for i in x.split()], help='adam/adamw/sgd', default = ["adam"])
-parser.add_argument('--lr_schedule', type=lambda x: [str(i) for i in x.split()], help='cosine_decay/polynomial_decay/linear_decay', default = ["linear_decay"])
+parser.add_argument('--lr', type=lambda x: [float(i) for i in x.split(",")], default = [1e-6,0.1])
+parser.add_argument('--lr_decay', type=lambda x: [float(i) for i in x.split(",")], help='learning rate decay', default = [2e-6,0.2])
+parser.add_argument('--weight_decay', type=lambda x: [float(i) for i in x.split(",")], help='weight decay', default = [3e-6,0.3])
+parser.add_argument('--batch_size', type=lambda x: [int(i) for i in x.split(",")], help='batch size', default = [32])
+parser.add_argument('--optim_type', type=lambda x: [str(i) for i in x.split(",")], help='adam/adamw/sgd', default = ["adam"])
+parser.add_argument('--lr_schedule', type=lambda x: [str(i) for i in x.split(",")], help='cosine_decay/polynomial_decay/linear_decay', default = ["linear_decay"])
 
 parser.add_argument('--tabular', type=bool, help='tabular predictor', default = 0)
+# parser.add_argument('--tabular_model', type=lambda x: [str(i) for i in x.split()], help='tabular predictor model', default = 0)
+
+
 
 args = parser.parse_args()
 
 class SoluProtPyModel(mlflow.pyfunc.PythonModel):
 
-    def __init__(self, predictor):
+    # def __init__(self, predictor, ps_featurize, signature):
+    
+    #     self.predictor = predictor
+    #     self.ps_featurize = ps_featurize
+    #     self.class SoluProtPyModel(mlflow.pyfunc.PythonModel):
+
+    def __init__(self, predictor, signature):
     
         self.predictor = predictor
+        # self.ps_featurize = ps_featurize
+        self.signature = signature
+        self.input_names, self.output_names = signature.inputs.input_names(), signature.outputs.input_names()
+
+
         
     def evaluate(self,  model_input, metrics=[]):
         if  len(metrics) > 1:
@@ -74,10 +86,29 @@ class SoluProtPyModel(mlflow.pyfunc.PythonModel):
             return self.predictor.evaluate(model_input)
     
     def predict(self, context, model_input):
-        
+        print("context:", context)
+        '''
+        context:
+            a instance of PythonModelContext
+            PythonModelContext对象由save_model() 和log_model()持久化方法隐式创建, 使用这些方法的artifacts参数指定的内容
+        model_input:
+            if request from flask, it will be a dataframe format
+            model_input: [pandas.DataFrame, numpy.ndarray, scipy.sparse.(csc.csc_matrix | csr.csr_matrix),
+            
+        return 
+            -> [numpy.ndarray | pandas.(Series | DataFrame) | List]
+        '''
+        print("model_input:", model_input)
         outputs = self.predictor.predict(model_input)
+        print("outputs:",outputs)
         return outputs
 
+    # def featurize_mlflow(self, row):
+    #     seq = row['seq']
+    #     data_dict = {}
+    #     # data = self.ps_featurize.featurize(seq)
+    #     data_dict['input'] = seq
+    #     return data_dict
 
 inp = json.dumps([{'name': 'seq','type':'string'}])
 oup = json.dumps([{'name': 'score','type':'double'}])
@@ -89,6 +120,10 @@ class AutogluonModel(mlflow.pyfunc.PythonModel):
     def __init__(self, predictor):
         self.predictor = predictor
         
+    # def load_context(self, context):
+    #     print("Loading context")
+    #     # self.predictor = TabularPredictor.load(context.artifacts.get("predictor_path"))
+    #     self.predictor = context.artifacts.get("predictor_path")
     
     def predict(self, model_input):
         return self.predictor.predict(model_input)
@@ -124,21 +159,14 @@ def find_sequence_columns(df):
     return sequence_columns
 
 if __name__ == "__main__" : 
-    train_data = pd.read_csv(args.train_data)
-    test_data = pd.read_csv(args.test_data)
+    
+    all_data = pd.read_csv(args.data)
+    test_data = all_data[all_data["split"] == "test"]
+    train_data = all_data[all_data["split"] == "train"]
+    valid_data = all_data[all_data["split"] == "valid"]
     # train_data = train_data[:500]
     # test_data = test_data[:200]
-    print("!!!args.lr:",args.lr)
-        
-    if args.test_n_fold != -1:
-        valid_data = train_data[train_data["fold"] == args.test_n_fold]
-        train_data = train_data[train_data["fold"] != args.test_n_fold]
-        print("args.test_n_fold:",args.test_n_fold)
-
-
-
-    else:
-        train_data, valid_data = train_test_split(train_data, test_size=0.2, random_state=42)
+    # valid_data = valid_data[:200]
         
     print("train_data:",train_data)
     print("valid_data:",valid_data)
@@ -159,7 +187,6 @@ if __name__ == "__main__" :
         'model.hf_text.checkpoint_name': args.check_point_name,
         'optimization.max_epochs': args.max_epochs,
         "optimization.lr_schedule":tune.choice(args.lr_schedule),
-        "env.num_gpus": 1,
     }
 
     grid_paras= {
@@ -200,7 +227,7 @@ if __name__ == "__main__" :
             custom_hyperparameters={
                         'model.hf_text.checkpoint_name': args.check_point_name,
                         'optimization.max_epochs': args.max_epochs,
-                        "env.num_gpus": 1,
+
                     }
     else:
         print("HPO preset !!!")
@@ -209,19 +236,17 @@ if __name__ == "__main__" :
             "env.batch_size": tune.choice([16,32,64,128,256,512,1024,2048]),
             "optimization.optim_type": tune.choice(["adam"]),
             'model.hf_text.checkpoint_name': args.check_point_name,
-            'optimization.max_epochs': 2,
-            "env.num_gpus": 1,
+            'optimization.max_epochs': args.max_epochs,
         }
         hyperparameter_tune_kwargs["searcher"] = "bayes"
         hyperparameter_tune_kwargs["scheduler"] = "ASHA"
         if args.mode == "medium_quality":
-            hyperparameter_tune_kwargs["num_trials"] = 2    
+            hyperparameter_tune_kwargs["num_trials"] = 5
             print("medium quality!!!")
         elif  args.mode == "best_quality":
-
             custom_hyperparameters["optimization.lr_decay"] = tune.uniform(1e-5, 0.1)
             custom_hyperparameters["optimization.weight_decay"] = tune.uniform(1e-5, 0.1)
-            hyperparameter_tune_kwargs["num_trials"] = 4
+            hyperparameter_tune_kwargs["num_trials"] = 100
             print("best quality!!!")
         else:
             print("please choose medium or best quality!!!")
@@ -229,56 +254,34 @@ if __name__ == "__main__" :
     with mlflow.start_run() as run:
         if args.tabular:
             print("feature engineering processing!!!")
-            train_feature_generator = PipelineFeatureGenerator(
-                generators=[
-                    [   one_hot_Generator(verbosity=3,features_in=['seq'],seq_type = "protein"),
-                        IdentityFeatureGenerator(infer_features_in_args=dict(
-                            valid_raw_types=[R_INT, R_FLOAT])),
-                    ],
-                    
-                ],
-                verbosity=3,
-                post_drop_duplicates=False,
-                post_generators=[IdentityFeatureGenerator()]
-            )
-            concatenated_df  = pd.concat([train_data,test_data,valid_data], axis=0)
-            one_hot_all_data = train_feature_generator.fit_transform(X=concatenated_df)
-
-            one_hot_train_data = one_hot_all_data[:len(train_data)]
-            test_data = one_hot_all_data[len(train_data):]
-
-            valid_data = one_hot_train_data[one_hot_train_data["fold"] ==0.0]
-            train_data = one_hot_train_data[one_hot_train_data["fold"] !=0.0]
-            
-            train_data = train_data.drop(["fold"],axis=1)
-            valid_data = valid_data.drop(["fold"],axis=1)
-            test_data = test_data.drop(["fold"],axis=1)
+            presets = "medium"
+            if args.mode != "manual":
+                presets = args.mode
             
             predictor = TabularPredictor(label=args.target_column,eval_metric = args.metric)
-            predictor.fit(train_data = train_data, tuning_data =valid_data)
+            predictor.fit(train_data = train_data, tuning_data =valid_data,  presets=presets)
+            
         else:
-            train_data = train_data.drop(["fold"],axis=1)
-            valid_data = valid_data.drop(["fold"],axis=1)
             
             predictor = MultiModalPredictor(label=args.target_column,eval_metric = args.metric)
-            # predictor.set_verbosity(4)
+            predictor.set_verbosity(4)
             predictor.fit(train_data = train_data, tuning_data =valid_data,
                         column_types = column_types,
                         hyperparameters=custom_hyperparameters,
                         hyperparameter_tune_kwargs = hyperparameter_tune_kwargs
                         )
+            
         
         # model = AutogluonModel(predictor)
-        model=SoluProtPyModel(predictor = predictor)
+        model=SoluProtPyModel(predictor = predictor, signature = signature)
         
         model_info = mlflow.pyfunc.log_model(
             artifact_path='model', python_model=model,
-            registered_model_name="model",
+            registered_model_name="model"
         )
-            # signature = signature
+        
 
         # model = mlflow.pyfunc.load_model(model_uri=model_info.model_uri).unwrap_python_model()
-        # prediction = model.predict(test_data)
         
         eval_metrics = []
         print("model.predictor.problem_type!!!!:",model.predictor.problem_type)
@@ -293,20 +296,18 @@ if __name__ == "__main__" :
         if args.tabular:
             test_metrics = model.evaluate(test_data)
             print("test eval!!!!:",test_metrics)
-            # valid_metrics = model.evaluate(valid_data) 
-            # print("valid eval:",valid_metrics)
+            valid_metrics = model.evaluate(valid_data) 
+            print("valid eval:",valid_metrics)
         else:
             test_metrics = model.evaluate(model_input=test_data, metrics=eval_metrics)
             print("test eval!!!!:",test_metrics)
             valid_metrics = model.evaluate(model_input=valid_data, metrics=eval_metrics) 
             print("valid eval:",valid_metrics)
         
-        # for k,v in valid_metrics.items():
-        #     log_metric('valid_'+k, v)
+        for k,v in valid_metrics.items():
+            log_metric('valid_'+k, v)
         for k,v in test_metrics.items():
             log_metric('test_'+k, v)
-            
-
         
         # mlflow.log_metric("test_precision", test_metrics["precision"]) # type: ignore
         # mlflow.log_metric("test_auc", test_metrics["roc_auc"]) # type: ignore
@@ -314,7 +315,7 @@ if __name__ == "__main__" :
         # mlflow.log_metric("test_balanced_acc", test_metrics["balanced_accuracy"]) # type: ignore
         # mlflow.log_metric("test_mcc", test_metrics["mcc"]) # type: ignore
 
-# python autoMM.py  --train_data /user/mahaohui/autoML/autogluon/autogluon_examples/soluprot/data/train.csv   --test_data /user/mahaohui/autoML/autogluon/autogluon_examples/soluprot/data/test.csv  --test_n_fold 1 
+# python autoMM.py  --train_data /user/mahaohui/autoML/autogluon/autogluon_examples/soluprot/data/train.csv   --test_data /user/mahaohui/autoML/autogluon/autogluon_examples/soluprot/data/test.csv  
 
 
 
