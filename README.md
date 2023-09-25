@@ -64,9 +64,13 @@ grid search 手动hpo：python autoMM.py --mode manual --searcher grid --lr "0.0
 机器学习集成:  python autoMM.py  --mode medium_quality --tabular 1
 
 
-### 注意事项:
 
-把模型和数据集打包为一个zip，上传到数据特征集，当跑算法时选择数据特征集，特征集会解压到当前目录的上一级
+
+
+### 注意事项:
+csv数据集应当有一个"split" columnn把数据分为 train/test/valid
+
+把（处理序列的hugging face）模型和数据集打包为一个zip，上传到数据特征集，当跑算法时选择数据特征集，特征集会解压到当前目录的上一级
 
 目前超参设置/优化暂不支持tabular predictor（机器学习），但当mode 设置为 “best quality” 时tabular predictor会使用集成学习（stacking + bagging）的方法尝试提高表现
 
