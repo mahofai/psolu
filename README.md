@@ -12,15 +12,15 @@ autoMM.py脚本调用autogluon 框架下HPO及相关功能实现multimodel predi
 
     --metric： 评估指标
 
-    --data：数据集路径
+    --train_data：训练数据集路径
+
+    --test_data: 测试数据集路径
 
     --tabular:  0:机器学习 1:深度学习 
 
 HPO 设定
     --mode: 预设参数设置(medium_quality/ best_quality/ manual), 
     除手动模式外均使用预设参数搜索范围，best/medium quality仅在num_trials上有差异
-
-    --test_n_fold:  选择手动划分的第n折作验证集,（column name: “fold”)，为 -1 时做随机划分，训练集80%，验证集20% 
 
     --searcher: 优化算法（bayes/grid/random）
 
@@ -31,13 +31,16 @@ HPO 设定
     --max_epochs: 模型每次调优的最大epochs
 
 参数搜索范围 (因mlflow run -P 传参只支持single value，现阶段在平台输入时必须带上 “” 以将数据以str 形式输入，autoMM.py 内会拆分处理）
-    --lr : 贝叶斯优化时输入的为“min max”，数字较小的必须在前，网格搜索时可输入多个数据，用空格间隔
 
-    --lr_decay: 同上
+    * 贝叶斯优化时输入的为“min max”，数字较小的必须在前，网格搜索时可输入多个数据，用空格间隔
 
-    --weight_decay: 同上
+    --lr : 学习率
 
-    --batch_size：离散值，可输入多个数据，用空格间隔
+    --lr_decay: 学习率衰减
+
+    --weight_decay: 权重衰减
+
+    --batch_size：批次样本数量，离散值，可输入多个数据，用空格间隔
 
     --optim_type:  优化器 (adam/ adamw/ sgd) 
 
@@ -62,6 +65,9 @@ grid search 手动hpo：python autoMM.py --mode manual --searcher grid --lr "0.0
 
 
 机器学习集成:  python autoMM.py  --mode medium_quality --tabular 1
+
+
+mlflow run 命令传参： mlflow run psolu -P tabular=1 
 
 
 

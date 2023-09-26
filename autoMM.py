@@ -55,7 +55,7 @@ parser.add_argument('--batch_size', type=lambda x: [int(i) for i in x.split(",")
 parser.add_argument('--optim_type', type=lambda x: [str(i) for i in x.split(",")], help='adam/adamw/sgd', default = ["adam"])
 parser.add_argument('--lr_schedule', type=lambda x: [str(i) for i in x.split(",")], help='cosine_decay/polynomial_decay/linear_decay', default = ["linear_decay"])
 
-parser.add_argument('--tabular', type=bool, help='tabular predictor', default = 0)
+parser.add_argument('--tabular', type=int, help='tabular predictor', default = 0)
 # parser.add_argument('--tabular_model', type=lambda x: [str(i) for i in x.split()], help='tabular predictor model', default = 0)
 
 
