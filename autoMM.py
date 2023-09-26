@@ -3,7 +3,7 @@ import tqdm
 import numpy as np
 import json
 from mlflow.models import ModelSignature
-# os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 from autogluon.tabular import TabularDataset, TabularPredictor
 from autogluon.core.utils.loaders import load_pd
 import pandas as pd
@@ -19,7 +19,7 @@ from ray import tune
 import mlflow
 import mlflow.pyfunc
 from mlflow import log_metric, log_param, log_artifact, log_text
-
+from sklearn.model_selection import train_test_split
 import argparse
 import re
 from ray.tune.search.basic_variant import BasicVariantGenerator
@@ -38,8 +38,8 @@ parser = argparse.ArgumentParser(description='argument parser')
 # complusory settings
 parser.add_argument('--target_column', type=str, help='prediction target column', default = "solubility")
 parser.add_argument('--metric', type=str,  help='evaluation metric', default = "precision")
-parser.add_argument('--data', type=str, help='path to train data csv', default = "../soluprot.csv")
-
+parser.add_argument('--train_data', type=str, help='path to train data csv', default = "../train.csv")
+parser.add_argument('--test_data', type=str, help='path to test data csv', default = "../test.csv")
 # HPO settings
 parser.add_argument('--mode', type=str, help='HPO bayes preset', choices = ["medium_quality", "best_quality","manual"], default = "manual")
 parser.add_argument('--searcher', type=str, help='grid/bayes/random', default = "")
@@ -159,18 +159,26 @@ def find_sequence_columns(df):
     return sequence_columns
 
 if __name__ == "__main__" : 
+    try:
+        training_data = pd.read_csv(args.train_data)
+        test_data = pd.read_csv(args.test_data)
+    except Exception as e:
+        print("fail to read csv file, please check file type!")
+        raise
+    if "split" in training_data.columns:
+        valid_data = training_data[training_data["split"] == "valid"]
+        train_data = training_data[training_data["split"] == "train"]
+    else:
+        train_data,valid_data = train_test_split(training_data, test_size=0.2)
+        print("input dataframe without 'split' column, random split data with test size 0.2 ")
     
-    all_data = pd.read_csv(args.data)
-    test_data = all_data[all_data["split"] == "test"]
-    train_data = all_data[all_data["split"] == "train"]
-    valid_data = all_data[all_data["split"] == "valid"]
     # train_data = train_data[:500]
     # test_data = test_data[:200]
     # valid_data = valid_data[:200]
         
     print("train_data:",train_data)
     print("valid_data:",valid_data)
-    seqs_columns = find_sequence_columns(train_data)
+    seqs_columns = find_sequence_columns(training_data)
     
     print("seqs columns:", seqs_columns)
     column_types = {}
