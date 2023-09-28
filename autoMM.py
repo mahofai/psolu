@@ -185,17 +185,6 @@ if __name__ == "__main__" :
     for seqs_column in seqs_columns:
         column_types[seqs_column] = "text"
     print("column_types:",column_types)
-    
-    custom_hyperparameters={
-        "optimization.learning_rate": tune.uniform(args.lr[0], args.lr[-1]),
-        "optimization.lr_decay":tune.uniform(args.lr_decay[0], args.lr_decay[-1]),
-        "optimization.weight_decay": tune.uniform(args.lr_decay[0], args.lr_decay[-1]),
-        "env.batch_size": tune.choice(args.batch_size),
-        "optimization.optim_type": tune.choice(args.optim_type),
-        'model.hf_text.checkpoint_name': args.check_point_name,
-        'optimization.max_epochs': args.max_epochs,
-        "optimization.lr_schedule":tune.choice(args.lr_schedule),
-    }
 
     grid_paras= {
     "optimization.learning_rate" : args.lr,
@@ -224,12 +213,22 @@ if __name__ == "__main__" :
             hyperparameter_tune_kwargs["searcher"] = "bayes"
             hyperparameter_tune_kwargs["scheduler"] = "ASHA"
             hyperparameter_tune_kwargs["num_trials"] = args.num_trials
-
+            custom_hyperparameters={
+                "optimization.learning_rate": tune.uniform(args.lr[0], args.lr[-1]),
+                "optimization.lr_decay":tune.uniform(args.lr_decay[0], args.lr_decay[-1]),
+                "optimization.weight_decay": tune.uniform(args.lr_decay[0], args.lr_decay[-1]),
+                "env.batch_size": tune.choice(args.batch_size),
+                "optimization.optim_type": tune.choice(args.optim_type),
+                'model.hf_text.checkpoint_name': args.check_point_name,
+                'optimization.max_epochs': args.max_epochs,
+                "optimization.lr_schedule":tune.choice(args.lr_schedule),
+            }
         elif args.searcher == "random":
             print("random search !!!")
             hyperparameter_tune_kwargs["searcher"] = "random"
             hyperparameter_tune_kwargs["scheduler"] = "ASHA"
             hyperparameter_tune_kwargs["num_trials"] = args.num_trials
+
         else:
             print("no searcher. skip hpo")
             custom_hyperparameters={
