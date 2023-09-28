@@ -49,25 +49,25 @@ HPO 设定
 
 
 ### 测试案例:
-无hpo： python autoMM.py --mode manual
+无hpo： python autoMM.py --mode manual --check_point_name /path/to/model  --train_data /path/to/train_data --test_data /path/to/test_data
 
 
-预设短时间hpo： python autoMM.py  --mode medium_quality
+预设短时间hpo： python autoMM.py  --mode medium_quality --check_point_name /path/to/model  --train_data /path/to/train_data --test_data /path/to/test_data
 
 
-预设长时间hpo:    python autoMM.py --mode best_quality
+预设长时间hpo:    python autoMM.py --mode best_quality --check_point_name /path/to/model  --train_data /path/to/train_data --test_data /path/to/test_data
 
 
-bayes 手动hpo：python autoMM.py --mode manual --searcher bayes --lr "0.0001,0.1" --lr_decay "0.0002,0.2"  --weight_decay "0.0003,0.3" --batch_size "16,32,64" --lr_schedule "cosine_decay" --optim_type "adam"
+bayes 手动hpo：python autoMM.py --mode manual --searcher bayes --lr "0.0001,0.1" --lr_decay "0.0002,0.2"  --weight_decay "0.0003,0.3" --batch_size "16,32,64" --lr_schedule "cosine_decay" --optim_type "adam" --check_point_name /path/to/model  --train_data /path/to/train_data --test_data /path/to/test_data
 
 
-grid search 手动hpo：python autoMM.py --mode manual --searcher grid --lr "0.0001,0.01,0.1" --lr_decay "0.0002,0.02,0.2"  --weight_decay "0.0003,0.03,0.3" --batch_size "16,32,64" --lr_schedule "cosine_decay" --optim_type "adam"
+grid search 手动hpo：python autoMM.py --mode manual --searcher grid --lr "0.0001,0.01,0.1" --lr_decay "0.0002,0.02,0.2"  --weight_decay "0.0003,0.03,0.3" --batch_size "16,32,64" --lr_schedule "cosine_decay" --optim_type "adam" --check_point_name /path/to/model  --train_data /path/to/train_data --test_data /path/to/test_data
 
 
-机器学习集成:  python autoMM.py  --mode medium_quality --tabular 1
+机器学习集成:  python autoMM.py  --mode medium_quality --tabular 1  --train_data /path/to/train_data --test_data /path/to/test_data
 
 
-mlflow run 命令传参： mlflow run psolu -P tabular=1 
+mlflow run 命令传参： mlflow run psolu -P tabular=1 ...
 
 
 
