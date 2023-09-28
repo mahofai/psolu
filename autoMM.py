@@ -235,7 +235,12 @@ if __name__ == "__main__" :
             custom_hyperparameters={
                         'model.hf_text.checkpoint_name': args.check_point_name,
                         'optimization.max_epochs': args.max_epochs,
-
+                        "optimization.learning_rate" : args.lr,
+                        "optimization.lr_decay" : args.lr_decay,
+                        "optimization.weight_decay" : args.lr_decay,
+                        "env.batch_size": args.batch_size,
+                        "optimization.optim_type": args.optim_type,
+                        "optimization.lr_schedule":args.lr_schedule
                     }
     else:
         print("HPO preset !!!")
