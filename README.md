@@ -10,7 +10,12 @@ autoMM.py脚本调用autogluon 框架下HPO及相关功能实现multimodel predi
 
     --target_column：预测目标列
 
-    --metric： 评估指标
+    --metric： 评估指标 
+    二分类: ["acc","accuracy","log_loss","roc_auc"]
+
+    多分类: ["acc","accuracy","log_loss"]
+
+    回归: ["root_mean_squared_error","r2","spearmanr","pearsonr"]
 
     --train_data：训练数据集路径
 
@@ -79,6 +84,7 @@ csv数据集应当有一个"split" columnn把数据分为 train/test/valid
 把（处理序列的hugging face）模型和数据集打包为一个zip，上传到数据特征集，当跑算法时选择数据特征集，特征集会解压到当前目录的上一级
 
 目前超参设置/优化暂不支持tabular predictor（机器学习），但当mode 设置为 “best quality” 时tabular predictor会使用集成学习（stacking + bagging）的方法尝试提高表现
+
 
 
 

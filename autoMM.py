@@ -185,15 +185,26 @@ if __name__ == "__main__" :
     grid_paras= {
     "optimization.learning_rate" : args.lr,
     "optimization.lr_decay" : args.lr_decay,
-    "optimization.weight_decay" : args.lr_decay,
+    "optimization.weight_decay" : args.weight_decay,
     "env.batch_size": args.batch_size,
     "optimization.optim_type": args.optim_type,
     "optimization.lr_schedule":args.lr_schedule
     }
     
+    custom_hyperparameters={
+        "optimization.learning_rate": tune.uniform(args.lr[0], args.lr[-1]),
+        "optimization.lr_decay":tune.uniform(args.lr_decay[0], args.lr_decay[-1]),
+        "optimization.weight_decay": tune.uniform(args.lr_decay[0], args.lr_decay[-1]),
+        "env.batch_size": tune.choice(args.batch_size),
+        "optimization.optim_type": tune.choice(args.optim_type),
+        'model.hf_text.checkpoint_name': args.check_point_name,
+        'optimization.max_epochs': args.max_epochs,
+        "optimization.lr_schedule":tune.choice(args.lr_schedule),
+    }
+    
     num_trails = args.num_trials
     hyperparameter_tune_kwargs = {}
-    custom_hyperparameters={}
+
     if args.mode == "manual":
         print("manual !!!")
         if args.searcher == "grid":
@@ -224,16 +235,9 @@ if __name__ == "__main__" :
             hyperparameter_tune_kwargs["searcher"] = "random"
             hyperparameter_tune_kwargs["scheduler"] = "ASHA"
             hyperparameter_tune_kwargs["num_trials"] = args.num_trials
-            custom_hyperparameters={
-                "optimization.learning_rate": tune.uniform(args.lr[0], args.lr[-1]),
-                "optimization.lr_decay":tune.uniform(args.lr_decay[0], args.lr_decay[-1]),
-                "optimization.weight_decay": tune.uniform(args.lr_decay[0], args.lr_decay[-1]),
-                "env.batch_size": tune.choice(args.batch_size),
-                "optimization.optim_type": tune.choice(args.optim_type),
-                'model.hf_text.checkpoint_name': args.check_point_name,
-                'optimization.max_epochs': args.max_epochs,
-                "optimization.lr_schedule":tune.choice(args.lr_schedule),
-            }
+            hyperparameter_tune_kwargs["metric"] = args.num_trials
+
+
 
         else:
             print("no searcher. skip hpo")
@@ -298,15 +302,16 @@ if __name__ == "__main__" :
             registered_model_name="model"
         )
         
-
         # model = mlflow.pyfunc.load_model(model_uri=model_info.model_uri).unwrap_python_model()
         
         eval_metrics = []
         print("model.predictor.problem_type!!!!:",model.predictor.problem_type)
-        if model.predictor.problem_type == "binary" or model.predictor.problem_type == "multiclass":
-            eval_metrics=["balanced_accuracy","precision","mcc","f1","recall"]
+        if model.predictor.problem_type == "binary":
+            eval_metrics=["accuracy","balanced_accuracy","precision","mcc","f1","precision","log_loss","roc_auc"]
         elif model.predictor.problem_type == "regression":
-            eval_metrics = ["mae","rmse","r2"]
+            eval_metrics = ["mae","rmse","r2","mse"]
+        elif model.predictor.problem_type == "multiclass":
+            eval_metrics=["accuracy","balanced_accuracy","mcc","f1","recall", "log_loss"]
 
         if args.metric not in eval_metrics:
             eval_metrics.append(args.metric)
