@@ -54,6 +54,11 @@ HPO 设定
 
 
 ### 测试案例:
+
+mlflow 测试：mlflow run psolu -P train_data=psolu/soluprot_train.csv -P test_data=psolu/soluprot_test.csv -P target_column=solubility -P tabular=1
+
+python command:
+
 无hpo： python autoMM.py --mode manual --check_point_name /path/to/model  --train_data /path/to/train_data --test_data /path/to/test_data
 
 

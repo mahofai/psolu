@@ -40,7 +40,7 @@ parser.add_argument('--test_data', type=str, help='path to test data csv', defau
 parser.add_argument('--mode', type=str, help='HPO bayes preset', choices = ["medium_quality", "best_quality","manual"], default = "manual")
 parser.add_argument('--searcher', type=str, help='grid/bayes/random', default = "")
 parser.add_argument('--num_trials', type=int, help='HPO trials number', default = 2)
-parser.add_argument('--check_point_name', type=str, help='huggingface_checkpoint', default = "../esm2_8m")
+parser.add_argument('--check_point_name', type=str, help='huggingface_checkpoint')
 parser.add_argument('--max_epochs', type=int,  help='max traning epoch', default = 20)
 
 # parameters settings
@@ -61,7 +61,6 @@ args = parser.parse_args()
 class SoluProtPyModel(mlflow.pyfunc.PythonModel):
 
     # def __init__(self, predictor, ps_featurize, signature):
-    
     #     self.predictor = predictor
     #     self.ps_featurize = ps_featurize
     #     self.class SoluProtPyModel(mlflow.pyfunc.PythonModel):
@@ -72,8 +71,6 @@ class SoluProtPyModel(mlflow.pyfunc.PythonModel):
         # self.ps_featurize = ps_featurize
         self.signature = signature
         self.input_names, self.output_names = signature.inputs.input_names(), signature.outputs.input_names()
-
-
         
     def evaluate(self,  model_input, metrics=[]):
         if  len(metrics) > 1:
