@@ -3,7 +3,7 @@ import tqdm
 import numpy as np
 import json
 from mlflow.models import ModelSignature
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+os.environ["CUDA_VISIBLE_DEVICES"] = "7"
 from autogluon.tabular import TabularDataset, TabularPredictor
 from autogluon.core.utils.loaders import load_pd
 import pandas as pd
@@ -15,6 +15,8 @@ from feature_generator import count_charge_Generator, net_charge_Generator, one_
 import sys
 from sklearn.model_selection import ParameterGrid
 from ray import tune
+
+
 
 import mlflow
 import mlflow.pyfunc
@@ -34,12 +36,12 @@ parser = argparse.ArgumentParser(description='argument parser')
 # complusory settings
 parser.add_argument('--target_column', type=str, help='prediction target column', default = "solubility")
 parser.add_argument('--metric', type=str,  help='evaluation metric', default = "precision")
-parser.add_argument('--train_data', type=str, help='path to train data csv', default = "../train.csv")
-parser.add_argument('--test_data', type=str, help='path to test data csv', default = "../test.csv")
+parser.add_argument('--train_data', type=str, help='path to train data csv')
+parser.add_argument('--valid_data', type=str, help='path to valid data csv')
 # HPO settings
 parser.add_argument('--mode', type=str, help='HPO bayes preset', choices = ["medium_quality", "best_quality","manual"], default = "manual")
 parser.add_argument('--searcher', type=str, help='grid/bayes/random', default = "")
-parser.add_argument('--num_trials', type=int, help='HPO trials number', default = 2)
+parser.add_argument('--num_trials', type=int, help='HPO trials number', default = 3)
 parser.add_argument('--check_point_name', type=str, help='huggingface_checkpoint')
 parser.add_argument('--max_epochs', type=int,  help='max traning epoch', default = 20)
 
@@ -107,7 +109,6 @@ inp = json.dumps([{'name': 'seq','type':'string'}])
 oup = json.dumps([{'name': 'score','type':'double'}])
 signature = ModelSignature.from_dict({'inputs': inp, 'outputs': oup})
 
-
 class AutogluonModel(mlflow.pyfunc.PythonModel):
 
     def __init__(self, predictor):
@@ -148,25 +149,19 @@ def find_sequence_columns(df):
             column_type = df[column].head(50).apply(check_sequence_type).unique()
             if len(column_type) == 1 and ("DNA" in column_type or "Protein" in column_type):
                 sequence_columns.append(column)
-
     return sequence_columns
 
 if __name__ == "__main__" : 
-    try:
-        training_data = pd.read_csv(args.train_data)
-        test_data = pd.read_csv(args.test_data)
-    except Exception as e:
-        print("fail to read csv file, please check file type!")
-        raise
-    if "split" in training_data.columns:
-        valid_data = training_data[training_data["split"] == "valid"]
-        train_data = training_data[training_data["split"] == "train"]
+    
+    training_data = pd.read_csv(f'../data/{args.train_data}')
+    if args.valid_data:
+        valid_data = pd.read_csv(f'../data/{args.valid_data}')
+        train_data = training_data
     else:
         train_data,valid_data = train_test_split(training_data, test_size=0.2)
         print("input dataframe without 'split' column, random split data with test size 0.2 ")
     
     # train_data = train_data[:500]
-    # test_data = test_data[:200]
     # valid_data = valid_data[:200]
         
     print("train_data:",train_data)
@@ -194,7 +189,7 @@ if __name__ == "__main__" :
         "optimization.weight_decay": tune.uniform(args.lr_decay[0], args.lr_decay[-1]),
         "env.batch_size": tune.choice(args.batch_size),
         "optimization.optim_type": tune.choice(args.optim_type),
-        'model.hf_text.checkpoint_name': args.check_point_name,
+        'model.hf_text.checkpoint_name': f'../model/{args.check_point_name}',
         'optimization.max_epochs': args.max_epochs,
         "optimization.lr_schedule":tune.choice(args.lr_schedule),
     }
@@ -223,7 +218,7 @@ if __name__ == "__main__" :
                 "optimization.weight_decay": tune.uniform(args.lr_decay[0], args.lr_decay[-1]),
                 "env.batch_size": tune.choice(args.batch_size),
                 "optimization.optim_type": tune.choice(args.optim_type),
-                'model.hf_text.checkpoint_name': args.check_point_name,
+                'model.hf_text.checkpoint_name': f'../model/{args.check_point_name}',
                 'optimization.max_epochs': args.max_epochs,
                 "optimization.lr_schedule":tune.choice(args.lr_schedule),
             }
@@ -233,13 +228,10 @@ if __name__ == "__main__" :
             hyperparameter_tune_kwargs["scheduler"] = "ASHA"
             hyperparameter_tune_kwargs["num_trials"] = args.num_trials
             hyperparameter_tune_kwargs["metric"] = args.num_trials
-
-
-
         else:
             print("no searcher. skip hpo")
             custom_hyperparameters={
-                        'model.hf_text.checkpoint_name': args.check_point_name,
+                        'model.hf_text.checkpoint_name': f'../model/{args.check_point_name}',
                         'optimization.max_epochs': args.max_epochs,
                         "optimization.learning_rate" : args.lr[0],
                         "optimization.lr_decay" : args.lr_decay[0],
@@ -254,7 +246,7 @@ if __name__ == "__main__" :
             "optimization.learning_rate": tune.uniform(1e-5, 0.1),
             "env.batch_size": tune.choice([16,32,64,128,256,512,1024,2048]),
             "optimization.optim_type": tune.choice(["adam"]),
-            'model.hf_text.checkpoint_name': args.check_point_name,
+            'model.hf_text.checkpoint_name': f'../model/{args.check_point_name}',
             'optimization.max_epochs': args.max_epochs,
         }
         hyperparameter_tune_kwargs["searcher"] = "bayes"
@@ -278,7 +270,7 @@ if __name__ == "__main__" :
                 presets = args.mode
             
             predictor = TabularPredictor(label=args.target_column,eval_metric = args.metric)
-            predictor.fit(train_data = train_data, tuning_data =valid_data,  presets=presets)
+            predictor.fit(train_data = train_data, tuning_data=valid_data,  presets=presets)
             
         else:
             
@@ -289,7 +281,6 @@ if __name__ == "__main__" :
                         hyperparameters=custom_hyperparameters,
                         hyperparameter_tune_kwargs = hyperparameter_tune_kwargs
                         )
-            
         
         # model = AutogluonModel(predictor)
         model=SoluProtPyModel(predictor = predictor, signature = signature)
@@ -314,28 +305,14 @@ if __name__ == "__main__" :
             eval_metrics.append(args.metric)
 
         if args.tabular:
-            test_metrics = model.evaluate(test_data)
-            print("test eval!!!!:",test_metrics)
             valid_metrics = model.evaluate(valid_data) 
             print("valid eval:",valid_metrics)
         else:
-            test_metrics = model.evaluate(model_input=test_data, metrics=eval_metrics)
-            print("test eval!!!!:",test_metrics)
             valid_metrics = model.evaluate(model_input=valid_data, metrics=eval_metrics) 
             print("valid eval:",valid_metrics)
         
         for k,v in valid_metrics.items():
             log_metric('valid_'+k, v)
-        for k,v in test_metrics.items():
-            log_metric('test_'+k, v)
-        
-        # mlflow.log_metric("test_precision", test_metrics["precision"]) # type: ignore
-        # mlflow.log_metric("test_auc", test_metrics["roc_auc"]) # type: ignore
-        # mlflow.log_metric("test_balanced_acc", test_metrics["accuracy"]) # type: ignore
-        # mlflow.log_metric("test_balanced_acc", test_metrics["balanced_accuracy"]) # type: ignore
-        # mlflow.log_metric("test_mcc", test_metrics["mcc"]) # type: ignore
-
-# python autoMM.py  --train_data /user/mahaohui/autoML/autogluon/autogluon_examples/soluprot/data/train.csv   --test_data /user/mahaohui/autoML/autogluon/autogluon_examples/soluprot/data/test.csv  
 
 
 
