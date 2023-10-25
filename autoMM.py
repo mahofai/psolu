@@ -153,9 +153,11 @@ def find_sequence_columns(df):
 
 if __name__ == "__main__" : 
     
-    training_data = pd.read_csv(f'../data/{args.train_data}')
+    current_file_dir = os.path.dirname(os.path.abspath(__file__))
+    parent_dir = os.path.dirname(current_file_dir)
+    training_data = pd.read_csv(f'{parent_dir}/data/{args.train_data}')
     if args.valid_data:
-        valid_data = pd.read_csv(f'../data/{args.valid_data}')
+        valid_data = pd.read_csv(f'{parent_dir}/data/{args.valid_data}')
         train_data = training_data
     else:
         train_data,valid_data = train_test_split(training_data, test_size=0.2)
