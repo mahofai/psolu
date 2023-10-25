@@ -191,7 +191,7 @@ if __name__ == "__main__" :
         "optimization.weight_decay": tune.uniform(args.lr_decay[0], args.lr_decay[-1]),
         "env.batch_size": tune.choice(args.batch_size),
         "optimization.optim_type": tune.choice(args.optim_type),
-        'model.hf_text.checkpoint_name': f'../model/{args.check_point_name}',
+        'model.hf_text.checkpoint_name': f'{parent_dir}/model/{args.check_point_name}',
         'optimization.max_epochs': args.max_epochs,
         "optimization.lr_schedule":tune.choice(args.lr_schedule),
     }
@@ -220,7 +220,7 @@ if __name__ == "__main__" :
                 "optimization.weight_decay": tune.uniform(args.lr_decay[0], args.lr_decay[-1]),
                 "env.batch_size": tune.choice(args.batch_size),
                 "optimization.optim_type": tune.choice(args.optim_type),
-                'model.hf_text.checkpoint_name': f'../model/{args.check_point_name}',
+                'model.hf_text.checkpoint_name': f'{parent_dir}/model/{args.check_point_name}',
                 'optimization.max_epochs': args.max_epochs,
                 "optimization.lr_schedule":tune.choice(args.lr_schedule),
             }
@@ -233,7 +233,7 @@ if __name__ == "__main__" :
         else:
             print("no searcher. skip hpo")
             custom_hyperparameters={
-                        'model.hf_text.checkpoint_name': f'../model/{args.check_point_name}',
+                        'model.hf_text.checkpoint_name': f'{parent_dir}/model/{args.check_point_name}',
                         'optimization.max_epochs': args.max_epochs,
                         "optimization.learning_rate" : args.lr[0],
                         "optimization.lr_decay" : args.lr_decay[0],
@@ -248,7 +248,7 @@ if __name__ == "__main__" :
             "optimization.learning_rate": tune.uniform(1e-5, 0.1),
             "env.batch_size": tune.choice([16,32,64,128,256,512,1024,2048]),
             "optimization.optim_type": tune.choice(["adam"]),
-            'model.hf_text.checkpoint_name': f'../model/{args.check_point_name}',
+            'model.hf_text.checkpoint_name': f'{parent_dir}/model/{args.check_point_name}',
             'optimization.max_epochs': args.max_epochs,
         }
         hyperparameter_tune_kwargs["searcher"] = "bayes"
