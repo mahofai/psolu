@@ -2,8 +2,8 @@
 
 ## soluprot intro:
 autoMM.py脚本调用autogluon 框架下HPO及相关功能实现multimodel predictor的训练及基本hpo
-主要脚本：autoMM.py, MLproject
-必须在项目的automl conda环境下使用
+主要脚本：autoMM.py, MLproject,必须在项目的automl conda环境下使用
+
 
 ### 参数说明:
 基本输入
@@ -17,21 +17,21 @@ autoMM.py脚本调用autogluon 框架下HPO及相关功能实现multimodel predi
 
     回归: ["root_mean_squared_error","r2","spearmanr","pearsonr"]
 
-    --train_data：训练数据集路径
+    --train_data：训练数据集csv文件名 
 
-    --test_data: 测试数据集路径
+    --valid_data: 测试数据集文件名
+
+    --check_point_name: 输入hugging face模型目录名
 
     --tabular:  0:机器学习 1:深度学习 
 
-HPO 设定
+超参搜索 设定
     --mode: 预设参数设置(medium_quality/ best_quality/ manual), 
     除手动模式外均使用预设参数搜索范围，best/medium quality仅在num_trials上有差异
 
-    --searcher: 优化算法（bayes/grid/random）
+    --searcher: 超参搜索算法（bayes/grid/random）
 
     --num_trials: 贝叶斯优化和随机优化尝试的次数，网格优化默认遍历所有数据点组合不被此参数影响
-
-    --check_point_name: 输入hugging face模型路径
 
     --max_epochs: 模型每次调优的最大epochs
 
@@ -52,45 +52,45 @@ HPO 设定
     --lr_schedule: 学习率衰减方法(cosine_decay/ 
     polynomial_decay/ linear_decay)
 
+### 数据特征集文件格式：
+
+所有数据必须以data.zip 形式上传，所有模型必须以model.zip格式上传
+
+data.zip
+
+    soluprot_train.csv
+
+    soluprot_valid.csv
+
+    soluprot_test.csv
+
+
+model.zip
+
+    esm2_8m
 
 ### 测试案例:
 
-mlflow 测试：mlflow run psolu -P train_data=psolu/soluprot_train.csv -P test_data=psolu/soluprot_test.csv -P target_column=solubility -P tabular=1
+automl机器学习 测试：mlflow run psolu -P train_data=soluprot_train.csv -P valid_data=soluprot_valid.csv -P target_column=solubility -P tabular=1 -P metric=roc_auc
 
-python command:
+深度学习测试：mlflow run psolu -P check_point_name=esm2_8m -P train_data=soluprot_train.csv -P valid_data=soluprot_valid.csv -P target_column=solubility -P lr=0.001 -P lr_decay=0.002 -P weight_decay=0.003 -P batch_size=32 -P optim_type=adam -P lr_schedule=cosine_decay -P mode=manual -P metric=roc_auc -P max_epochs=5
 
-无hpo： python autoMM.py --mode manual --check_point_name /path/to/model  --train_data /path/to/train_data --test_data /path/to/test_data
+小规模贝叶斯超参数搜索：mlflow run psolu -P check_point_name=esm2_8m -P train_data=soluprot_train.csv -P valid_data=soluprot_valid.csv -P target_column=solubility -P mode=medium_quality -P metric=roc_auc -P max_epochs=2
 
+大规模贝叶斯超参数搜索（耗时为小规模的20倍）：mlflow run psolu -P check_point_name=esm2_8m -P train_data=soluprot_train.csv -P valid_data=soluprot_valid.csv -P target_column=solubility -P mode=best_quality -P metric=roc_auc -P max_epochs=2
 
-预设短时间hpo： python autoMM.py  --mode medium_quality --check_point_name /path/to/model  --train_data /path/to/train_data --test_data /path/to/test_data
+手动贝叶斯超参数搜索：mlflow run psolu -P check_point_name=esm2_8m -P train_data=soluprot_train.csv -P valid_data=soluprot_valid.csv -P target_column=solubility -P lr='0.001,0.1' -P lr_decay='0.002,0.2' -P weight_decay='0.003,0.3' -P batch_size=32 -P optim_type=adam -P lr_schedule=cosine_decay -P mode=manual -P metric=roc_auc -P max_epochs=2 -P num_trials=2 -P searcher=bayes
 
+手动随机超参数搜索：mlflow run psolu -P check_point_name=esm2_8m -P train_data=soluprot_train.csv -P valid_data=soluprot_valid.csv -P target_column=solubility -P lr='0.001,0.1' -P lr_decay='0.002,0.2' -P weight_decay='0.003,0.3' -P batch_size=32 -P optim_type=adam -P lr_schedule=cosine_decay -P mode=manual -P metric=roc_auc -P max_epochs=2 -P num_trials=2 -P searcher=random
 
-预设长时间hpo:    python autoMM.py --mode best_quality --check_point_name /path/to/model  --train_data /path/to/train_data --test_data /path/to/test_data
-
-
-bayes 手动hpo：python autoMM.py --mode manual --searcher bayes --lr "0.0001,0.1" --lr_decay "0.0002,0.2"  --weight_decay "0.0003,0.3" --batch_size "16,32,64" --lr_schedule "cosine_decay" --optim_type "adam" --check_point_name /path/to/model  --train_data /path/to/train_data --test_data /path/to/test_data
-
-
-grid search 手动hpo：python autoMM.py --mode manual --searcher grid --lr "0.0001,0.01,0.1" --lr_decay "0.0002,0.02,0.2"  --weight_decay "0.0003,0.03,0.3" --batch_size "16,32,64" --lr_schedule "cosine_decay" --optim_type "adam" --check_point_name /path/to/model  --train_data /path/to/train_data --test_data /path/to/test_data
-
-
-机器学习集成:  python autoMM.py  --mode medium_quality --tabular 1  --train_data /path/to/train_data --test_data /path/to/test_data
-
-
-mlflow run 命令传参： mlflow run psolu -P tabular=1 ...
-
-
-
+手动随机超参数搜索：mlflow run psolu -P check_point_name=esm2_8m -P train_data=soluprot_train.csv -P valid_data=soluprot_valid.csv -P target_column=solubility -P lr='0.001,0.1' -P lr_decay='0.002,0.2' -P weight_decay='0.003,0.3' -P batch_size=32 -P optim_type=adam -P lr_schedule=cosine_decay -P mode=manual -P metric=roc_auc -P max_epochs=2  -P searcher=grid
 
 
 ### 注意事项:
-csv数据集应当有一个"split" columnn把数据分为 train/test/valid
 
-把（处理序列的hugging face）模型和数据集打包为一个zip，上传到数据特征集，当跑算法时选择数据特征集，特征集会解压到当前目录的上一级
+把（处理序列的hugging face）模型和数据集打包为一个zip，上传到数据特征集，当跑算法时选择数据特征集，特征集会解压到当前目录的上一级并保留.zip作最外层目录
 
 目前超参设置/优化暂不支持tabular predictor（机器学习），但当mode 设置为 “best quality” 时tabular predictor会使用集成学习（stacking + bagging）的方法尝试提高表现
-
-
 
 
 
