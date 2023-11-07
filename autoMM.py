@@ -155,7 +155,9 @@ if __name__ == "__main__" :
     
     current_file_dir = os.path.dirname(os.path.abspath(__file__))
     parent_dir = os.path.dirname(current_file_dir)
+    
     training_data = pd.read_csv(f'{parent_dir}/data/{args.train_data}')
+    
     if args.valid_data:
         valid_data = pd.read_csv(f'{parent_dir}/data/{args.valid_data}')
         train_data = training_data
@@ -259,7 +261,7 @@ if __name__ == "__main__" :
         elif  args.mode == "best_quality":
             custom_hyperparameters["optimization.lr_decay"] = tune.uniform(1e-5, 0.1)
             custom_hyperparameters["optimization.weight_decay"] = tune.uniform(1e-5, 0.1)
-            hyperparameter_tune_kwargs["num_trials"] = 100
+            hyperparameter_tune_kwargs["num_trials"] = 50
             print("best quality!!!")
         else:
             print("please choose medium or best quality!!!")
