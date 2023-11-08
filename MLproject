@@ -7,11 +7,11 @@ entry_points:
     parameters:
       target_column: { type: str, help:'prediction target column', default: "solubility"}
       mode: { type: str, help: 'HPO bayes preset', choices: ["medium_quality", "best_quality","manual"], default: "manual"}
-      train_data: { type: str, help: 'path to train data csv', default :  "soluprot_train.csv"}
-      valid_data: { type: str, help: 'path to test data csv', default :  "soluprot_test.csv"}
+      train_data: { type: str, help: 'path to train data csv', default :  "data/soluprot_train.csv"}
+      valid_data: { type: str, help: 'path to test data csv', default :  "data/soluprot_test.csv"}
       searcher: { type: str, help: 'grid/bayes/random', default : ""}
       num_trials: { type: int, help: 'HPO trials number', default :  5}
-      check_point_name: { type: str, help: 'huggingface_checkpoint', default : "esm2_t6_8M_UR50D"}
+      check_point_name: { type: str, help: 'huggingface_checkpoint', default : "model/esm2_t6_8M_UR50D"}
       max_epochs: { type: int,  help: 'max traning epoch', default : 2}
       metric: { type: str, help: 'evaluation metric', default : "precision"}
 

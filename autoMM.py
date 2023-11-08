@@ -156,10 +156,10 @@ if __name__ == "__main__" :
     current_file_dir = os.path.dirname(os.path.abspath(__file__))
     parent_dir = os.path.dirname(current_file_dir)
     
-    training_data = pd.read_csv(f'{parent_dir}/data/{args.train_data}')
+    training_data = pd.read_csv(f'../{args.train_data}')
     
     if args.valid_data:
-        valid_data = pd.read_csv(f'{parent_dir}/data/{args.valid_data}')
+        valid_data = pd.read_csv(f'../{args.valid_data}')
         train_data = training_data
     else:
         train_data,valid_data = train_test_split(training_data, test_size=0.2)
@@ -193,7 +193,7 @@ if __name__ == "__main__" :
         "optimization.weight_decay": tune.uniform(args.lr_decay[0], args.lr_decay[-1]),
         "env.batch_size": tune.choice(args.batch_size),
         "optimization.optim_type": tune.choice(args.optim_type),
-        'model.hf_text.checkpoint_name': f'{parent_dir}/model/{args.check_point_name}',
+        'model.hf_text.checkpoint_name': f'../{args.check_point_name}',
         'optimization.max_epochs': args.max_epochs,
         "optimization.lr_schedule":tune.choice(args.lr_schedule),
     }
@@ -222,7 +222,7 @@ if __name__ == "__main__" :
                 "optimization.weight_decay": tune.uniform(args.lr_decay[0], args.lr_decay[-1]),
                 "env.batch_size": tune.choice(args.batch_size),
                 "optimization.optim_type": tune.choice(args.optim_type),
-                'model.hf_text.checkpoint_name': f'{parent_dir}/model/{args.check_point_name}',
+                'model.hf_text.checkpoint_name': f'../{args.check_point_name}',
                 'optimization.max_epochs': args.max_epochs,
                 "optimization.lr_schedule":tune.choice(args.lr_schedule),
             }
@@ -235,7 +235,7 @@ if __name__ == "__main__" :
         else:
             print("no searcher. skip hpo")
             custom_hyperparameters={
-                        'model.hf_text.checkpoint_name': f'{parent_dir}/model/{args.check_point_name}',
+                        'model.hf_text.checkpoint_name': f'../{args.check_point_name}',
                         'optimization.max_epochs': args.max_epochs,
                         "optimization.learning_rate" : args.lr[0],
                         "optimization.lr_decay" : args.lr_decay[0],
@@ -250,7 +250,7 @@ if __name__ == "__main__" :
             "optimization.learning_rate": tune.uniform(1e-5, 0.1),
             "env.batch_size": tune.choice([16,32,64,128,256,512,1024,2048]),
             "optimization.optim_type": tune.choice(["adam"]),
-            'model.hf_text.checkpoint_name': f'{parent_dir}/model/{args.check_point_name}',
+            'model.hf_text.checkpoint_name': f'../{args.check_point_name}',
             'optimization.max_epochs': args.max_epochs,
         }
         hyperparameter_tune_kwargs["searcher"] = "bayes"
