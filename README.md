@@ -21,7 +21,7 @@ autoMM.py脚本调用autogluon 框架下HPO及相关功能实现multimodel predi
 
     --valid_data: 测试数据集文件名
 
-    --check_point_name: 输入hugging face模型目录名
+    --checkpoint_name: 输入hugging face模型目录名
 
     --tabular:  0:机器学习 1:深度学习 
 
@@ -71,7 +71,7 @@ model.zip
 
 ### 测试案例:
 
-automl机器学习 测试：mlflow run psolu -P train_data=soluprot_train.csv -P valid_data=soluprot_valid.csv -P target_column=solubility -P tabular=1 -P metric=roc_auc
+automl机器学习 测试：mlflow run psolu -P train_data=soluprot_train.csv -P valid_data=soluprot_valid.csv -P target_column=solubility -P tabular=1 -P metric=roc_auc -P mode=manual
 
 深度学习测试：mlflow run psolu -P check_point_name=esm2_8m -P train_data=soluprot_train.csv -P valid_data=soluprot_valid.csv -P target_column=solubility -P lr=0.001 -P lr_decay=0.002 -P weight_decay=0.003 -P batch_size=32 -P optim_type=adam -P lr_schedule=cosine_decay -P mode=manual -P metric=roc_auc -P max_epochs=5
 
