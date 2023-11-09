@@ -42,7 +42,7 @@ parser.add_argument('--valid_data', type=str, help='path to valid data csv')
 parser.add_argument('--mode', type=str, help='HPO bayes preset', choices = ["medium_quality", "best_quality","manual"], default = "manual")
 parser.add_argument('--searcher', type=str, help='grid/bayes/random', default = "")
 parser.add_argument('--num_trials', type=int, help='HPO trials number', default = 3)
-parser.add_argument('--check_point_name', type=str, help='huggingface_checkpoint')
+parser.add_argument('--checkpoin_name', type=str, help='huggingface_checkpoint')
 parser.add_argument('--max_epochs', type=int,  help='max traning epoch', default = 20)
 
 # parameters settings
@@ -193,7 +193,7 @@ if __name__ == "__main__" :
         "optimization.weight_decay": tune.uniform(args.lr_decay[0], args.lr_decay[-1]),
         "env.batch_size": tune.choice(args.batch_size),
         "optimization.optim_type": tune.choice(args.optim_type),
-        'model.hf_text.checkpoint_name': f'../{args.check_point_name}',
+        'model.hf_text.checkpoint_name': f'../{args.checkpoin_name}',
         'optimization.max_epochs': args.max_epochs,
         "optimization.lr_schedule":tune.choice(args.lr_schedule),
     }
@@ -222,7 +222,7 @@ if __name__ == "__main__" :
                 "optimization.weight_decay": tune.uniform(args.lr_decay[0], args.lr_decay[-1]),
                 "env.batch_size": tune.choice(args.batch_size),
                 "optimization.optim_type": tune.choice(args.optim_type),
-                'model.hf_text.checkpoint_name': f'../{args.check_point_name}',
+                'model.hf_text.checkpoint_name': f'../{args.checkpoin_name}',
                 'optimization.max_epochs': args.max_epochs,
                 "optimization.lr_schedule":tune.choice(args.lr_schedule),
             }
@@ -235,7 +235,7 @@ if __name__ == "__main__" :
         else:
             print("no searcher. skip hpo")
             custom_hyperparameters={
-                        'model.hf_text.checkpoint_name': f'../{args.check_point_name}',
+                        'model.hf_text.checkpoint_name': f'../{args.checkpoin_name}',
                         'optimization.max_epochs': args.max_epochs,
                         "optimization.learning_rate" : args.lr[0],
                         "optimization.lr_decay" : args.lr_decay[0],
@@ -250,7 +250,7 @@ if __name__ == "__main__" :
             "optimization.learning_rate": tune.uniform(1e-5, 0.1),
             "env.batch_size": tune.choice([16,32,64,128,256,512,1024,2048]),
             "optimization.optim_type": tune.choice(["adam"]),
-            'model.hf_text.checkpoint_name': f'../{args.check_point_name}',
+            'model.hf_text.checkpoint_name': f'../{args.checkpoin_name}',
             'optimization.max_epochs': args.max_epochs,
         }
         hyperparameter_tune_kwargs["searcher"] = "bayes"
@@ -274,7 +274,10 @@ if __name__ == "__main__" :
                 presets = args.mode
             
             predictor = TabularPredictor(label=args.target_column,eval_metric = args.metric)
-            predictor.fit(train_data = train_data, tuning_data=valid_data,  presets=presets)
+            if args.mode == "manual":
+                predictor.fit(train_data = train_data, tuning_data=valid_data)
+            else:
+                predictor.fit(train_data = train_data,  presets=presets)
             
         else:
             
