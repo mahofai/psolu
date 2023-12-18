@@ -17,7 +17,6 @@ from sklearn.model_selection import ParameterGrid
 from ray import tune
 
 
-
 import mlflow
 import mlflow.pyfunc
 from mlflow import log_metric, log_param, log_artifact, log_text
@@ -45,7 +44,7 @@ parser.add_argument('--num_trials', type=int, help='HPO trials number', default 
 parser.add_argument('--checkpoint_name', type=str, help='huggingface_checkpoint')
 parser.add_argument('--max_epochs', type=int,  help='max traning epoch', default = 20)
 
-# parameters settings
+# huggingface model parameters settings
 parser.add_argument('--lr', type=lambda x: [float(i) for i in x.split(",")], default = [1e-6,0.1])
 parser.add_argument('--lr_decay', type=lambda x: [float(i) for i in x.split(",")], help='learning rate decay', default = [2e-6,0.2])
 parser.add_argument('--weight_decay', type=lambda x: [float(i) for i in x.split(",")], help='weight decay', default = [3e-6,0.3])
@@ -53,26 +52,43 @@ parser.add_argument('--batch_size', type=lambda x: [int(i) for i in x.split(",")
 parser.add_argument('--optim_type', type=lambda x: [str(i) for i in x.split(",")], help='adam/adamw/sgd', default = ["adam"])
 parser.add_argument('--lr_schedule', type=lambda x: [str(i) for i in x.split(",")], help='cosine_decay/polynomial_decay/linear_decay', default = ["linear_decay"])
 
+# tabualr settings
 parser.add_argument('--tabular', type=int, help='tabular predictor', default = 0)
-# parser.add_argument('--tabular_model', type=lambda x: [str(i) for i in x.split()], help='tabular predictor model', default = 0)
+parser.add_argument('--tabular_model', type=str, help='tabular predictor model', default = "RF")
 
+# RF/XT HPO settings
+parser.add_argument('--n_estimators', type=lambda x: [int(i) for i in x.split(",")], help='The number of trees in the forest.', default = [100])
+parser.add_argument('--criterion', choices=["gini", "entropy", "log_loss"], help='The function to measure the quality of a split', default = "gini")
+parser.add_argument('--max_depth', type=lambda x: [int(i) for i in x.split(",")], help='The maximum depth of the tree', default = [100])
+parser.add_argument('--min_samples_split', type=lambda x: [int(i) for i in x.split(",")], help='The minimum number of samples required to split an internal node', default = [2])
+parser.add_argument('--min_samples_leaf', type=lambda x: [int(i) for i in x.split(",")], help='The minimum number of samples required to be at a leaf node', default = [1])
 
+#XGB/CAT/LGB
+parser.add_argument('--subsample', type=lambda x: [int(i) for i in x.split(",")], help='subsample.', default = [0])
+parser.add_argument('--reg_lambda', type=lambda x: [float(i) for i in x.split(",")], help='reg_lambda.', default = [0])
 
+#KNN
+parser.add_argument('--power', type=lambda x: [float(i) for i in x.split(",")], help='1:manhattan_distance , 2:euclidean_distance', default = [2])
+parser.add_argument('--n_neighbors', type=lambda x: [int(i) for i in x.split(",")], help='subsample.', default = [0])
+parser.add_argument('--leaf_size', type=lambda x: [int(i) for i in x.split(",")], help='subsample.', default = [0])
+#KNN
+parser.add_argument('--tol', type=lambda x: [float(i) for i in x.split(",")], help='1:manhattan_distance , 2:euclidean_distance', default = [0.0001,0.001])
+parser.add_argument('--C', type=lambda x: [float(i) for i in x.split(",")], help='1:manhattan_distance , 2:euclidean_distance', default = [1.0])
 args = parser.parse_args()
 
-class SoluProtPyModel(mlflow.pyfunc.PythonModel):
+class autogluonPyModel(mlflow.pyfunc.PythonModel):
 
     # def __init__(self, predictor, ps_featurize, signature):
     #     self.predictor = predictor
     #     self.ps_featurize = ps_featurize
-    #     self.class SoluProtPyModel(mlflow.pyfunc.PythonModel):
+    #     self.class autogluonPyModel(mlflow.pyfunc.PythonModel):
 
-    def __init__(self, predictor, signature):
+    def __init__(self, predictor, signature=""):
     
         self.predictor = predictor
         # self.ps_featurize = ps_featurize
-        self.signature = signature
-        self.input_names, self.output_names = signature.inputs.input_names(), signature.outputs.input_names()
+        # self.signature = signature
+        # self.input_names, self.output_names = signature.inputs.input_names(), signature.outputs.input_names()
         
     def evaluate(self,  model_input, metrics=[]):
         if  len(metrics) > 1:
@@ -108,23 +124,6 @@ class SoluProtPyModel(mlflow.pyfunc.PythonModel):
 inp = json.dumps([{'name': 'seq','type':'string'}])
 oup = json.dumps([{'name': 'score','type':'double'}])
 signature = ModelSignature.from_dict({'inputs': inp, 'outputs': oup})
-
-class AutogluonModel(mlflow.pyfunc.PythonModel):
-
-    def __init__(self, predictor):
-        self.predictor = predictor
-        
-    # def load_context(self, context):
-    #     print("Loading context")
-    #     # self.predictor = TabularPredictor.load(context.artifacts.get("predictor_path"))
-    #     self.predictor = context.artifacts.get("predictor_path")
-    
-    def predict(self, model_input):
-        return self.predictor.predict(model_input)
-    
-    def evaluate(self, model_input, metrics):
-        return self.predictor.evaluate(model_input,metrics=metrics)
-    
 
 def check_sequence_type(sequence):
 
@@ -265,22 +264,109 @@ if __name__ == "__main__" :
             print("best quality!!!")
         else:
             print("please choose medium or best quality!!!")
+            
+            
+    if args.tabular!=0:
+        options = {}
+        if args.tabular_model == "RF" or args.tabular_model == "XT":
+            options = {
+                'n_estimators': space.Int(args.n_estimators[0], args.n_estimators[-1], default= (args.n_estimators[0] + args.n_estimators[-1])/2),
+                'criterion': args.criterion,
+                'max_depth': space.Int(args.max_depth[0], args.max_depth[-1], default=int((args.max_depth[0] + args.max_depth[-1])/2)),
+                'min_samples_split': space.Int(args.min_samples_split[0], args.min_samples_split[-1], default=int((args.min_samples_split[0] + args.min_samples_split[-1])/2)),
+                'min_samples_leaf': space.Int(args.min_samples_leaf[0], args.min_samples_leaf[-1], default=int((args.min_samples_leaf[0] + args.min_samples_leaf[-1])/2)),
+            }
+        elif args.tabular_model == "GBM" or   args.tabular_model == "XGB":
+            options = {
+                'learning_rate': space.Real(args.lr[0], args.lr[-1], default=float((args.lr[0] + args.lr[-1])/2)),
+                # 'max_depth': space.Int(args.max_depth[0], args.max_depth[-1], default=int((args.max_depth[0] + args.max_depth[-1])/2)),
+                'subsample': space.Real(args.subsample[0], args.subsample[-1], default=float((args.subsample[0] + args.subsample[-1])/2)),
+                'reg_lambda': space.Real(args.reg_lambda[0], args.reg_lambda[-1], default=float((args.reg_lambda[0] + args.reg_lambda[-1])/2)),
+            }
+        elif args.tabular_model == "CAT":
+            options = {
+                'learning_rate': space.Real(args.lr[0], args.lr[-1], default=float((args.lr[0] + args.lr[-1])/2)),
+                # 'max_depth': space.Int(args.max_depth[0], args.max_depth[-1], default=int((args.max_depth[0] + args.max_depth[-1])/2)),
+                'subsample': space.Real(args.subsample[0], args.subsample[-1], default=float((args.subsample[0] + args.subsample[-1])/2)),
+                'l2_leaf_reg': space.Real(args.reg_lambda[0], args.reg_lambda[-1], default=float((args.reg_lambda[0] + args.reg_lambda[-1])/2)),
+            }
+        elif args.tabular_model == "NN_TORCH":
+            options = {
+                'learning_rate': space.Real(args.lr[0], args.lr[-1], default=float((args.lr[0] + args.lr[-1])/2)),
+                # 'batch_size': space.Categorical(i for i in args.batch_size),
+                # 'weight_decay': space.Real(args.weight_decay[0], args.weight_decay[-1], default=float((args.weight_decay[0] + args.weight_decay[-1])/2)),
+            }
+        elif  args.tabular_model == "FASTAI":
+            options = {
+                'lr': space.Real(args.lr[0], args.lr[-1], default=float((args.lr[0] + args.lr[-1])/2)),
+                # 'batch_size': space.Categorical(i for i in args.batch_size),
+            }
+        elif  args.tabular_model == "KNN":
+            options = {
+                'leaf_size': space.Int(args.max_depth[0], args.max_depth[-1], default=int((args.max_depth[0] + args.max_depth[-1])/2)),
+                'p': space.Categorical(i for i in args.power),
+                'n_neighbors': space.Int(args.max_depth[0], args.max_depth[-1], default=int((args.max_depth[0] + args.max_depth[-1])/2)),
+            }
+        elif args.tabular_model == "LR":
+            options = {
+                'C': space.Real(args.lr[0], args.lr[-1], default=float((args.lr[0] + args.lr[-1])/2)),
+                'tol': space.Real(args.lr[0], args.lr[-1], default=float((args.lr[0] + args.lr[-1])/2)),
+                
+            }
+        
+        custom_hyperparameters = {f'{args.tabular_model}': options}
+
+        hyperparameter_tune_kwargs = {  # HPO is not performed unless hyperparameter_tune_kwargs is specified
+            'num_trials': args.num_trials,
+            'scheduler' : 'local',
+            'searcher': args.searcher,
+        }  # Refer to TabularPredictor.fit docstring for all valid values
 
     with mlflow.start_run() as run:
         if args.tabular:
             print("feature engineering processing!!!")
             presets = "medium"
-            if args.mode != "manual":
-                presets = args.mode
-            print("presets:",presets)
-            predictor = TabularPredictor(label=args.target_column,eval_metric = args.metric)
-            if args.mode == "manual":
-                predictor.fit(train_data = train_data, tuning_data=valid_data)
-            else:
-                predictor.fit(train_data = train_data,  presets=presets)
-            
+            predictor = TabularPredictor(
+                label=args.target_column,
+                eval_metric=args.metric
+            )
+            if args.mode == "manual" :
+                print("!!!default parameter")
+                predictor.fit(train_data = train_data,  hyperparameters={'RF': [{'criterion': 'gini', 'ag_args': {'name_suffix': 'Gini', 'problem_types': ['binary', 'multiclass']}}, {'criterion': 'entropy', 'ag_args': {'name_suffix': 'Entr', 'problem_types': ['binary', 'multiclass']}}, {'criterion': 'squared_error', 'ag_args': {'name_suffix': 'MSE', 'problem_types': ['regression', 'quantile']}}],})
+                
+                test_data = pd.read_csv("/user/mahaohui/autoML/git/psolu/test.csv")
+            elif args.searcher :
+                if os.path.exists(args.valid_data):
+                    predictor.fit(
+                        train_data = train_data, 
+                        tuning_data=valid_data, 
+                        hyperparameters=custom_hyperparameters,
+                        hyperparameter_tune_kwargs=hyperparameter_tune_kwargs,
+                        )
+                else:
+                    predictor.fit(
+                        train_data = train_data, 
+                        hyperparameters=custom_hyperparameters,
+                        hyperparameter_tune_kwargs=hyperparameter_tune_kwargs,
+                        )
+
+                test_data = pd.read_csv("/user/mahaohui/autoML/git/psolu/test.csv")
+                leaderboard_hpo = predictor.leaderboard(test_data, silent=True)
+                print("leade_board:", leaderboard_hpo)
+                
+                best_model_name = leaderboard_hpo[leaderboard_hpo['stack_level'] == 1]['model'].iloc[1]
+                worst_model_name = leaderboard_hpo[leaderboard_hpo['stack_level'] == 1]['model'].iloc[-1]
+
+                predictor_info = predictor.info()
+                best_model_info = predictor_info['model_info'][best_model_name]
+                worst_model_info = predictor_info['model_info'][worst_model_name]
+
+                print(f'Best Model Hyperparameters ({best_model_name}):')
+                print(best_model_info['hyperparameters'])
+                print(f'worst Model Hyperparameters ({worst_model_name}):')
+                print(worst_model_info['hyperparameters'])
+
         else:
-            
             predictor = MultiModalPredictor(label=args.target_column,eval_metric = args.metric)
             predictor.set_verbosity(4)
             predictor.fit(train_data = train_data, tuning_data =valid_data,
@@ -290,7 +376,7 @@ if __name__ == "__main__" :
                         )
         
         # model = AutogluonModel(predictor)
-        model=SoluProtPyModel(predictor = predictor, signature = signature)
+        model=autogluonPyModel(predictor = predictor)
         
         model_info = mlflow.pyfunc.log_model(
             artifact_path='model', python_model=model,
@@ -310,13 +396,17 @@ if __name__ == "__main__" :
 
         if args.metric not in eval_metrics:
             eval_metrics.append(args.metric)
-
-        if args.tabular:
-            valid_metrics = model.evaluate(valid_data) 
-            print("valid eval:",valid_metrics)
-        else:
-            valid_metrics = model.evaluate(model_input=valid_data, metrics=eval_metrics) 
-            print("valid eval:",valid_metrics)
+            
+        # test_data = pd.read_csv("/user/mahaohui/autoML/git/psolu/test.csv")
+        # if args.tabular:
+        #     valid_metrics = model.evaluate(test_data) 
+        #     print("valid eval:",valid_metrics)
+        # else:
+        #     valid_metrics = model.evaluate(model_input=test_data, metrics=eval_metrics) 
+        #     print("valid eval:",valid_metrics)
         
-        for k,v in valid_metrics.items():
-            log_metric('valid_'+k, v)
+        # for k,v in valid_metrics.items():
+        #     log_metric('valid_'+k, v)
+
+
+
