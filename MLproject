@@ -39,7 +39,7 @@ entry_points:
       leaf_size: {type: str, help='leaf_size.', default: "10,50"}
 
 
-    command: "python autoMM.py \
+    command: "python autotabular.py \
     --target_column {target_column} \
     --mode {mode} \
     --train_data {train_data} \

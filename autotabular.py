@@ -330,7 +330,7 @@ if __name__ == "__main__" :
                 label=args.target_column,
                 eval_metric=args.metric
             )
-            if args.mode == "manual" :
+            if args.mode == "manual":
                 print("!!!default parameter")
                 predictor.fit(train_data = train_data,  hyperparameters={'RF': [{'criterion': 'gini', 'ag_args': {'name_suffix': 'Gini', 'problem_types': ['binary', 'multiclass']}}, {'criterion': 'entropy', 'ag_args': {'name_suffix': 'Entr', 'problem_types': ['binary', 'multiclass']}}, {'criterion': 'squared_error', 'ag_args': {'name_suffix': 'MSE', 'problem_types': ['regression', 'quantile']}}],})
                 
