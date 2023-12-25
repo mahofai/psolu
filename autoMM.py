@@ -274,6 +274,7 @@ if __name__ == "__main__" :
             if args.mode != "manual":
                 presets = args.mode
             print("presets:",presets)
+            # add "code" in path as mlflow model code_path defalut dir
             predictor = TabularPredictor(label=args.target_column,eval_metric = args.metric,path=save_path)
             if args.mode == "manual":
                 predictor.fit(train_data = train_data, tuning_data=valid_data)
@@ -291,13 +292,16 @@ if __name__ == "__main__" :
         
         # model = AutogluonModel(predictor)
         model=SoluProtPyModel(predictor = predictor, signature = signature)
+        current_dir = os.getcwd()
         
+        # os.system("mv ./code/automl_model ./")
         model_info = mlflow.pyfunc.log_model(
             artifact_path='model', python_model=model,
             registered_model_name="model",
-            input_example=train_data.iloc[[-1]]
+            input_example=train_data.iloc[[-1]],
+            code_path=[f'{current_dir}/{save_path}']
         )
-        mlflow.log_artifacts(local_dir=f"./{save_path}",artifact_path="model/"+save_path)
+        # mlflow.log_artifacts(local_dir=f"./{save_path}",artifact_path="model/"+save_path)
         # model = mlflow.pyfunc.load_model(model_uri=model_info.model_uri).unwrap_python_model()
         
         eval_metrics = []
