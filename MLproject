@@ -8,7 +8,8 @@ entry_points:
       target_column: { type: str, help:'prediction target column', default: "solubility"}
       mode: { type: str, help: 'HPO bayes preset', choices: ["medium_quality", "best_quality","manual"], default: "manual"}
       train_data: { type: str, help: 'path to train data csv', default :  "data/soluprot_train.csv"}
-      valid_data: { type: str, help: 'path to test data csv', default :  "data/soluprot_test.csv"}
+      valid_data: { type: str, help: 'path to valid data csv', default :  "data/soluprot_valid.csv"}
+      test_data: { type: str, help: 'path to test data csv', default :  "data/soluprot_test.csv"}
       searcher: { type: str, help: 'grid/bayes/random', default : "none"}
       num_trials: { type: int, help: 'HPO trials number', default :  10}
       checkpoint_name: { type: str, help: 'huggingface_checkpoint_name', default : "model/esm2_8m"}

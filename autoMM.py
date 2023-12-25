@@ -267,21 +267,21 @@ if __name__ == "__main__" :
             print("please choose medium or best quality!!!")
 
     with mlflow.start_run() as run:
+        save_path="automl_model"
         if args.tabular:
             print("feature engineering processing!!!")
             presets = "medium"
             if args.mode != "manual":
                 presets = args.mode
             print("presets:",presets)
-            predictor = TabularPredictor(label=args.target_column,eval_metric = args.metric)
+            predictor = TabularPredictor(label=args.target_column,eval_metric = args.metric,path=save_path)
             if args.mode == "manual":
                 predictor.fit(train_data = train_data, tuning_data=valid_data)
             else:
                 predictor.fit(train_data = train_data,  presets=presets)
             
         else:
-            
-            predictor = MultiModalPredictor(label=args.target_column,eval_metric = args.metric)
+            predictor = MultiModalPredictor(label=args.target_column,eval_metric = args.metric,path=save_path)
             predictor.set_verbosity(4)
             predictor.fit(train_data = train_data, tuning_data =valid_data,
                         column_types = column_types,
@@ -294,9 +294,10 @@ if __name__ == "__main__" :
         
         model_info = mlflow.pyfunc.log_model(
             artifact_path='model', python_model=model,
-            registered_model_name="model"
+            registered_model_name="model",
+            input_example=train_data.iloc[[-1]]
         )
-        
+        mlflow.log_artifacts(local_dir=f"./{save_path}",artifact_path="model/"+save_path)
         # model = mlflow.pyfunc.load_model(model_uri=model_info.model_uri).unwrap_python_model()
         
         eval_metrics = []

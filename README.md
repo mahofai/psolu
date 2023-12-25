@@ -1,8 +1,10 @@
 # AutoML4Bio
 
-## soluprot intro:
+## intro:
 autoMM.py脚本调用autogluon 框架下HPO及相关功能实现multimodel predictor的训练及基本hpo
 主要脚本：autoMM.py, MLproject,必须在项目的automl conda环境下使用
+
+！数据集仅支持包含有序列或数据的csv文件，其他形式的数据集暂不支持
 
 
 ### 参数说明:

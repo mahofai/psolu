@@ -37,6 +37,7 @@ parser.add_argument('--target_column', type=str, help='prediction target column'
 parser.add_argument('--metric', type=str,  help='evaluation metric', default = "precision")
 parser.add_argument('--train_data', type=str, help='path to train data csv')
 parser.add_argument('--valid_data', type=str, help='path to valid data csv')
+parser.add_argument('--test_data', type=str, help='path to test data csv')
 # HPO settings
 parser.add_argument('--mode', type=str, help='HPO bayes preset', choices = ["medium_quality", "best_quality","manual"], default = "manual")
 parser.add_argument('--searcher', type=str, help='grid/bayes/random', default = "")
@@ -273,7 +274,6 @@ if __name__ == "__main__" :
                 'n_estimators': space.Int(args.n_estimators[0], args.n_estimators[-1], default= (args.n_estimators[0] + args.n_estimators[-1])/2),
                 'criterion': args.criterion,
                 'max_depth': space.Int(args.max_depth[0], args.max_depth[-1], default=int((args.max_depth[0] + args.max_depth[-1])/2)),
-                'min_samples_split': space.Int(args.min_samples_split[0], args.min_samples_split[-1], default=int((args.min_samples_split[0] + args.min_samples_split[-1])/2)),
                 'min_samples_leaf': space.Int(args.min_samples_leaf[0], args.min_samples_leaf[-1], default=int((args.min_samples_leaf[0] + args.min_samples_leaf[-1])/2)),
             }
         elif args.tabular_model == "GBM" or   args.tabular_model == "XGB":
@@ -290,17 +290,6 @@ if __name__ == "__main__" :
                 'subsample': space.Real(args.subsample[0], args.subsample[-1], default=float((args.subsample[0] + args.subsample[-1])/2)),
                 'l2_leaf_reg': space.Real(args.reg_lambda[0], args.reg_lambda[-1], default=float((args.reg_lambda[0] + args.reg_lambda[-1])/2)),
             }
-        elif args.tabular_model == "NN_TORCH":
-            options = {
-                'learning_rate': space.Real(args.lr[0], args.lr[-1], default=float((args.lr[0] + args.lr[-1])/2)),
-                # 'batch_size': space.Categorical(i for i in args.batch_size),
-                # 'weight_decay': space.Real(args.weight_decay[0], args.weight_decay[-1], default=float((args.weight_decay[0] + args.weight_decay[-1])/2)),
-            }
-        elif  args.tabular_model == "FASTAI":
-            options = {
-                'lr': space.Real(args.lr[0], args.lr[-1], default=float((args.lr[0] + args.lr[-1])/2)),
-                # 'batch_size': space.Categorical(i for i in args.batch_size),
-            }
         elif  args.tabular_model == "KNN":
             options = {
                 'leaf_size': space.Int(args.max_depth[0], args.max_depth[-1], default=int((args.max_depth[0] + args.max_depth[-1])/2)),
@@ -311,7 +300,6 @@ if __name__ == "__main__" :
             options = {
                 'C': space.Real(args.lr[0], args.lr[-1], default=float((args.lr[0] + args.lr[-1])/2)),
                 'tol': space.Real(args.lr[0], args.lr[-1], default=float((args.lr[0] + args.lr[-1])/2)),
-                
             }
         
         custom_hyperparameters = {f'{args.tabular_model}': options}
@@ -325,15 +313,13 @@ if __name__ == "__main__" :
     with mlflow.start_run() as run:
         if args.tabular:
             print("feature engineering processing!!!")
-            presets = "medium"
             predictor = TabularPredictor(
                 label=args.target_column,
                 eval_metric=args.metric
             )
-            if args.mode == "manual":
+            if args.mode != "manual":
                 print("!!!default parameter")
-                predictor.fit(train_data = train_data,  hyperparameters={'RF': [{'criterion': 'gini', 'ag_args': {'name_suffix': 'Gini', 'problem_types': ['binary', 'multiclass']}}, {'criterion': 'entropy', 'ag_args': {'name_suffix': 'Entr', 'problem_types': ['binary', 'multiclass']}}, {'criterion': 'squared_error', 'ag_args': {'name_suffix': 'MSE', 'problem_types': ['regression', 'quantile']}}],})
-                
+                predictor.fit(train_data = train_data, presets=args.mode)
                 test_data = pd.read_csv("/user/mahaohui/autoML/git/psolu/test.csv")
             elif args.searcher :
                 if os.path.exists(args.valid_data):
