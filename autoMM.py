@@ -93,6 +93,9 @@ class SoluProtPyModel(mlflow.pyfunc.PythonModel):
         return 
             -> [numpy.ndarray | pandas.(Series | DataFrame) | List]
         '''
+        print("self.predictor.path:",self.predictor.path)
+        self.predictor.path = "../ml/model/code"+self.predictor.path
+        print("self.predictor.path:",self.predictor.path)
         print("model_input:", model_input)
         outputs = self.predictor.predict(model_input)
         print("outputs:",outputs)
