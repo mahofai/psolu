@@ -31,7 +31,7 @@ from sklearn.model_selection import train_test_split
 
 from zipfile import ZipFile
 import os
- 
+
 parser = argparse.ArgumentParser(description='argument parser')
 # complusory settings
 parser.add_argument('--target_column', type=str, help='prediction target column', default = "solubility")
@@ -73,6 +73,12 @@ class SoluProtPyModel(mlflow.pyfunc.PythonModel):
         # self.ps_featurize = ps_featurize
         self.signature = signature
         self.input_names, self.output_names = signature.inputs.input_names(), signature.outputs.input_names()
+        print("PWD:",os.getcwd())
+        print("self.predictor.path:",self.predictor.path)
+        if os.path.exists("../ml/model/code/"):
+            os.system(f"cp -r ../ml/model/code/{self.predictor.path} .")
+        print("ls:",os.system("ls"))
+
         
     def evaluate(self,  model_input, metrics=[]):
         if  len(metrics) > 1:
@@ -93,10 +99,7 @@ class SoluProtPyModel(mlflow.pyfunc.PythonModel):
         return 
             -> [numpy.ndarray | pandas.(Series | DataFrame) | List]
         '''
-        print("PWD:",os.getcwd())
-        print("self.predictor.path:",self.predictor.path)
-        os.system(f"cp -r ../ml/model/code/{self.predictor.path} .")
-        print("ls:",os.system("ls"))
+
         print("model_input:", model_input)
         outputs = self.predictor.predict(model_input)
         print("outputs:",outputs)

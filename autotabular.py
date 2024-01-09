@@ -30,20 +30,28 @@ from sklearn.model_selection import train_test_split
 
 from zipfile import ZipFile
 import os
+from propythia.dna.descriptors import DNADescriptor
+from propythia.protein.descriptors import ProteinDescritors
+from propythia.dna.calculate_features import calculate_and_normalize
+from propythia.dna.sequence import ReadDNA
+
+ 
  
 parser = argparse.ArgumentParser(description='argument parser')
+
 # complusory settings
 parser.add_argument('--target_column', type=str, help='prediction target column', default = "solubility")
 parser.add_argument('--metric', type=str,  help='evaluation metric', default = "precision")
-parser.add_argument('--train_data', type=str, help='path to train data csv')
-parser.add_argument('--valid_data', type=str, help='path to valid data csv')
-parser.add_argument('--test_data', type=str, help='path to test data csv')
+# parser.add_argument('--train_data', type=str, help='path to train data csv', default = "data/dna_activity_train.csv")
+# parser.add_argument('--valid_data', type=str, help='path to valid data csv', default = "data/dna_activity_valid.csv")
+# parser.add_argument('--test_data', type=str, help='path to test data csv', default = "data/soluprot_test.csv")
+parser.add_argument('--data', type=str, help='path to test data csv', default = "data/soluprot.csv")
 # HPO settings
 parser.add_argument('--mode', type=str, help='HPO bayes preset', choices = ["medium_quality", "best_quality","manual"], default = "manual")
 parser.add_argument('--searcher', type=str, help='grid/bayes/random', default = "")
 parser.add_argument('--num_trials', type=int, help='HPO trials number', default = 3)
 parser.add_argument('--checkpoint_name', type=str, help='huggingface_checkpoint')
-parser.add_argument('--max_epochs', type=int,  help='max traning epoch', default = 20)
+parser.add_argument('--max_epochs', type=int,  help='max traning epoch', default = 10)
 
 # huggingface model parameters settings
 parser.add_argument('--lr', type=lambda x: [float(i) for i in x.split(",")], default = [1e-6,0.1])
@@ -53,9 +61,11 @@ parser.add_argument('--batch_size', type=lambda x: [int(i) for i in x.split(",")
 parser.add_argument('--optim_type', type=lambda x: [str(i) for i in x.split(",")], help='adam/adamw/sgd', default = ["adam"])
 parser.add_argument('--lr_schedule', type=lambda x: [str(i) for i in x.split(",")], help='cosine_decay/polynomial_decay/linear_decay', default = ["linear_decay"])
 
+
 # tabualr settings
-parser.add_argument('--tabular', type=int, help='tabular predictor', default = 0)
-parser.add_argument('--tabular_model', type=str, help='tabular predictor model', default = "RF")
+parser.add_argument('--tabular', type=int, help='tabular predictor', default = 1)
+parser.add_argument('--tabular_model', type=str, help='tabular predictor model', default = "XGB")
+parser.add_argument('--auto_feature', type=int, help='generate some default features by sequences', default = 1)
 
 # RF/XT HPO settings
 parser.add_argument('--n_estimators', type=lambda x: [int(i) for i in x.split(",")], help='The number of trees in the forest.', default = [100])
@@ -65,14 +75,14 @@ parser.add_argument('--min_samples_split', type=lambda x: [int(i) for i in x.spl
 parser.add_argument('--min_samples_leaf', type=lambda x: [int(i) for i in x.split(",")], help='The minimum number of samples required to be at a leaf node', default = [1])
 
 #XGB/CAT/LGB
-parser.add_argument('--subsample', type=lambda x: [int(i) for i in x.split(",")], help='subsample.', default = [0])
-parser.add_argument('--reg_lambda', type=lambda x: [float(i) for i in x.split(",")], help='reg_lambda.', default = [0])
+parser.add_argument('--subsample', type=lambda x: [int(i) for i in x.split(",")], help='subsample.', default = [0.6,0.8])
+parser.add_argument('--reg_lambda', type=lambda x: [float(i) for i in x.split(",")], help='reg_lambda.', default = [0.0000001,0.0001])
 
 #KNN
-parser.add_argument('--power', type=lambda x: [float(i) for i in x.split(",")], help='1:manhattan_distance , 2:euclidean_distance', default = [2])
+parser.add_argument('--power', type=int, help='1:manhattan_distance , 2:euclidean_distance', default = 2)
 parser.add_argument('--n_neighbors', type=lambda x: [int(i) for i in x.split(",")], help='subsample.', default = [0])
 parser.add_argument('--leaf_size', type=lambda x: [int(i) for i in x.split(",")], help='subsample.', default = [0])
-#KNN
+#LR
 parser.add_argument('--tol', type=lambda x: [float(i) for i in x.split(",")], help='1:manhattan_distance , 2:euclidean_distance', default = [0.0001,0.001])
 parser.add_argument('--C', type=lambda x: [float(i) for i in x.split(",")], help='1:manhattan_distance , 2:euclidean_distance', default = [1.0])
 args = parser.parse_args()
@@ -110,6 +120,10 @@ class autogluonPyModel(mlflow.pyfunc.PythonModel):
         return 
             -> [numpy.ndarray | pandas.(Series | DataFrame) | List]
         '''
+        print("PWD:",os.getcwd())
+        print("self.predictor.path:",self.predictor.path)
+        os.system(f"cp -r ../ml/model/code/{self.predictor.path} .")
+        print("ls:",os.system("ls"))
         print("model_input:", model_input)
         outputs = self.predictor.predict(model_input)
         print("outputs:",outputs)
@@ -143,40 +157,99 @@ def check_sequence_type(sequence):
         return "Unknown"
 
 def find_sequence_columns(df):
-    sequence_columns = []
+    dna_columns = []
+    protein_columns = []
     for column in df.columns:
         if df[column].dtype == 'object':
             column_type = df[column].head(50).apply(check_sequence_type).unique()
-            if len(column_type) == 1 and ("DNA" in column_type or "Protein" in column_type):
-                sequence_columns.append(column)
+            if len(column_type) == 1 and ("DNA" in column_type):
+                dna_columns.append(column)
+            elif  len(column_type) == 1 and ("Protein" in column_type):
+                protein_columns.append(column)
+    sequence_columns = {"dna_columns":dna_columns, "protein_columns":protein_columns}
     return sequence_columns
+
+
+def split_data(df):
+    if "split" in df.columns and "test" in df["split"].values :
+        train_data = df[df["split"]=="train"]
+        valid_data = df[df["split"]=="valid"]
+        test_data = df[df["split"]=="test"]
+    else:
+        train_data,valid_data = train_test_split(df, test_size=0.2)
+        test_data,valid_data = train_test_split(df, test_size=0.5)
+    return train_data, valid_data, test_data
+    
+def add_protein_features(df, seq_column):
+    descriptors_df = ProteinDescritors(dataset= df , col= seq_column)
+    processed_df = descriptors_df.get_all_physicochemical()
+    df = df.merge(processed_df, on=seq_column, how='inner') 
+    
+    # processed_df = descriptors_df.get_all_aac()
+    # df = df.merge(processed_df, on=seq_column, how='inner') 
+    descriptors_df = ProteinDescritors(dataset= df , col= seq_column)
+    processed_df = descriptors_df.get_all_correlation()
+    df = df.merge(processed_df, on=seq_column, how='inner')
+    df = df.loc[:, ~df.columns.duplicated()]
+    return df
+
+def add_dna_features(df, seq_column):
+    df = df[~df[seq_column].str.contains('N')]
+    features=['nucleic_acid_composition','dinucleotide_composition','gc_content','DAC']
+    df = df.rename(columns={seq_column: "sequence"})
+    print(df)
+    fps_x = pd.DataFrame()
+    fps_x, fps_y = calculate_and_normalize(data=df, descriptor_list=features)
+    print(fps_x)
+    # descriptors_df = ProteinDescritors(dataset= df , col= seqs_columns[0])
+    df = df.rename(columns={"sequence": seq_column})
+    output_dataframe = pd.concat([df, fps_x], axis=1) # type: ignore
+    output_dataframe = output_dataframe.loc[:, ~output_dataframe.columns.duplicated()]
+    return df
+     
+def auto_features(df):
+        sequence_columns = find_sequence_columns(df)
+        if len(sequence_columns["protein_columns"]) > 1 or len(sequence_columns["dna_columns"]) > 1:
+            print("autofeature can only deal with one protein/dna column !!!")
+            exit()
+        for prot_column in sequence_columns["protein_columns"]:
+            print("!!protein_column:",prot_column)
+            df = add_protein_features(df, prot_column)
+            print(df)
+            
+        for dna_column in sequence_columns["dna_columns"]:
+            print("!!dna_column:",dna_column)
+            df = add_dna_features(df,dna_column)
+            print(df)
+        if 'solubility_x' in df.columns:
+            df = df.rename(columns={'solubility_x': 'solubility'})
+        return df
+
+from autogluon.features.generators import PipelineFeatureGenerator, CategoryFeatureGenerator, IdentityFeatureGenerator, AutoMLPipelineFeatureGenerator
 
 if __name__ == "__main__" : 
     
     current_file_dir = os.path.dirname(os.path.abspath(__file__))
     parent_dir = os.path.dirname(current_file_dir)
     
-    training_data = pd.read_csv(f'{parent_dir}/{args.train_data}')
+    df = pd.read_csv(f'{parent_dir}/{args.data}')
+    df = df[:1000]
     
-    if args.valid_data:
-        valid_data = pd.read_csv(f'{parent_dir}/{args.valid_data}')
-        train_data = training_data
-    else:
-        train_data,valid_data = train_test_split(training_data, test_size=0.2)
-        print("input dataframe without 'split' column, random split data with test size 0.2 ")
+    # auto feature engineering
+    if args.auto_feature and args.tabular:
+        df = auto_features(df)
+        np.set_printoptions(threshold=np.inf)
+        print("auto featrues.columns:",df.columns[:20])
+        print("auto featrues:",df)
     
-    # train_data = train_data[:500]
-    # valid_data = valid_data[:200]
+    train_data, valid_data, test_data = split_data(df)
+    #keep unique or auplicated values
+    mypipeline = AutoMLPipelineFeatureGenerator(post_drop_duplicates=False,pre_drop_useless=False)
+    
         
     print("train_data:",train_data)
     print("valid_data:",valid_data)
-    seqs_columns = find_sequence_columns(training_data)
-    
-    print("seqs columns:", seqs_columns)
-    column_types = {}
-    for seqs_column in seqs_columns:
-        column_types[seqs_column] = "text"
-    print("column_types:",column_types)
+    print("test_data:",test_data)
 
     grid_paras= {
     "optimization.learning_rate" : args.lr,
@@ -311,51 +384,59 @@ if __name__ == "__main__" :
         }  # Refer to TabularPredictor.fit docstring for all valid values
 
     with mlflow.start_run() as run:
+        current_dir = os.getcwd()
+        save_path = "automl_tabular_model"
         if args.tabular:
             print("feature engineering processing!!!")
             predictor = TabularPredictor(
                 label=args.target_column,
-                eval_metric=args.metric
-            )
-            if args.mode != "manual":
-                print("!!!default parameter")
-                predictor.fit(train_data = train_data, presets=args.mode)
-                test_data = pd.read_csv("/user/mahaohui/autoML/git/psolu/test.csv")
-            elif args.searcher :
-                if os.path.exists(args.valid_data):
-                    predictor.fit(
-                        train_data = train_data, 
-                        tuning_data=valid_data, 
-                        hyperparameters=custom_hyperparameters,
-                        hyperparameter_tune_kwargs=hyperparameter_tune_kwargs,
-                        )
-                else:
-                    predictor.fit(
-                        train_data = train_data, 
-                        hyperparameters=custom_hyperparameters,
-                        hyperparameter_tune_kwargs=hyperparameter_tune_kwargs,
-                        )
-
-                test_data = pd.read_csv("/user/mahaohui/autoML/git/psolu/test.csv")
-                leaderboard_hpo = predictor.leaderboard(test_data, silent=True)
-                print("leade_board:", leaderboard_hpo)
+                eval_metric=args.metric,
+                path=save_path,
                 
-                best_model_name = leaderboard_hpo[leaderboard_hpo['stack_level'] == 1]['model'].iloc[1]
-                worst_model_name = leaderboard_hpo[leaderboard_hpo['stack_level'] == 1]['model'].iloc[-1]
+            )
+            if args.mode != "manual" :
+                print("!!!default parameter")
+                predictor.fit(train_data = train_data, tuning_data=valid_data, presets=args.mode, feature_generator=mypipeline,)
+            elif args.searcher :
+                predictor.fit(
+                    train_data = train_data, 
+                    tuning_data=valid_data, 
+                    feature_generator=mypipeline,
+                    hyperparameters=custom_hyperparameters,
+                    hyperparameter_tune_kwargs=hyperparameter_tune_kwargs,
+                    )
+            else:
+                predictor.fit(train_data = train_data, tuning_data=valid_data, feature_generator=mypipeline,)
 
-                predictor_info = predictor.info()
-                best_model_info = predictor_info['model_info'][best_model_name]
-                worst_model_info = predictor_info['model_info'][worst_model_name]
+            leaderboard_hpo = predictor.leaderboard(test_data, silent=True)
+            print("leade_board:", leaderboard_hpo)
+            
+            best_model_name = leaderboard_hpo[leaderboard_hpo['stack_level'] == 1]['model'].iloc[1]
+            worst_model_name = leaderboard_hpo[leaderboard_hpo['stack_level'] == 1]['model'].iloc[-1]
 
-                print(f'Best Model Hyperparameters ({best_model_name}):')
-                print(best_model_info['hyperparameters'])
-                print(f'worst Model Hyperparameters ({worst_model_name}):')
-                print(worst_model_info['hyperparameters'])
+            predictor_info = predictor.info()
+            best_model_info = predictor_info['model_info'][best_model_name]
+            worst_model_info = predictor_info['model_info'][worst_model_name]
+
+            print(f'Best Model Hyperparameters ({best_model_name}):')
+            print(best_model_info['hyperparameters'])
+            print(f'worst Model Hyperparameters ({worst_model_name}):')
+            print(worst_model_info['hyperparameters'])
+            
+            #TODO: select the best performance model on test data/valid data to export 
 
         else:
-            predictor = MultiModalPredictor(label=args.target_column,eval_metric = args.metric)
+            seqs_columns = find_sequence_columns(training_data)
+            print("seqs columns:", seqs_columns)
+            column_types = {}
+            for seqs_column in seqs_columns:
+                column_types[seqs_column] = "text"
+            print("column_types:",column_types)
+            predictor = MultiModalPredictor(label=args.target_column,eval_metric = args.metric, path=save_path)
             predictor.set_verbosity(4)
-            predictor.fit(train_data = train_data, tuning_data =valid_data,
+            predictor.fit(train_data = train_data, 
+                        tuning_data =valid_data,
+                        feature_generator=mypipeline,
                         column_types = column_types,
                         hyperparameters=custom_hyperparameters,
                         hyperparameter_tune_kwargs = hyperparameter_tune_kwargs
@@ -364,11 +445,13 @@ if __name__ == "__main__" :
         # model = AutogluonModel(predictor)
         model=autogluonPyModel(predictor = predictor)
         
+        # os.system("mv ./code/automl_model ./")
         model_info = mlflow.pyfunc.log_model(
             artifact_path='model', python_model=model,
-            registered_model_name="model"
+            registered_model_name="model",
+            input_example=train_data.iloc[[-1]],
+            code_path=[f'{current_dir}/{save_path}']
         )
-        
         # model = mlflow.pyfunc.load_model(model_uri=model_info.model_uri).unwrap_python_model()
         
         eval_metrics = []
