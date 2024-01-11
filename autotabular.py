@@ -35,6 +35,8 @@ from propythia.protein.descriptors import ProteinDescritors
 from propythia.dna.calculate_features import calculate_and_normalize
 from propythia.dna.sequence import ReadDNA
 
+from bayes_opt import BayesianOptimization, UtilityFunction
+
 model_mapping = {
     'random_forrest': 'RF',
     'extra_tree': 'XT',
@@ -50,27 +52,27 @@ parser.add_argument('--metric', type=str,  help='evaluation metric', default = "
 # parser.add_argument('--train_data', type=str, help='path to train data csv', default = "data/dna_activity_train.csv")
 # parser.add_argument('--valid_data', type=str, help='path to valid data csv', default = "data/dna_activity_valid.csv")
 # parser.add_argument('--test_data', type=str, help='path to test data csv', default = "data/soluprot_test.csv")
-parser.add_argument('--data', type=str, help='path to test data csv', default = "data/filtered_soluprot.csv")
+parser.add_argument('--data', type=str, help='path to test data csv', default = "data/soluprot.csv")
 # HPO settings
 parser.add_argument('--mode', type=str, help='HPO bayes preset', choices = ["medium_quality", "best_quality","manual"], default = "manual")
-parser.add_argument('--searcher', type=str, help='grid/bayes/random', default = "bayes")
+parser.add_argument('--searcher', type=str, help='grid/bayes/random', default = "grid")
 parser.add_argument('--num_trials', type=int, help='HPO trials number', default = 3)
 parser.add_argument('--checkpoint_name', type=str, help='huggingface_checkpoint',default="model/esm2_8m")
 parser.add_argument('--max_epochs', type=int,  help='max traning epoch', default = 3)
 
 # huggingface model parameters settings
-parser.add_argument('--lr', type=lambda x: [float(i) for i in x.split(",")], default = [1e-6,1e-3,0.1])
-parser.add_argument('--lr_decay', type=lambda x: [float(i) for i in x.split(",")], help='learning rate decay', default = [2e-6])
-parser.add_argument('--weight_decay', type=lambda x: [float(i) for i in x.split(",")], help='weight decay', default = [3e-6])
-parser.add_argument('--batch_size', type=lambda x: [int(i) for i in x.split(",")], help='batch size', default = [32])
+parser.add_argument('--lr', type=lambda x: [float(i) for i in x.split(",")], default = [1e-6,1e-3])
+parser.add_argument('--lr_decay', type=lambda x: [float(i) for i in x.split(",")], help='learning rate decay', default = [2e-6,2e-3])
+parser.add_argument('--weight_decay', type=lambda x: [float(i) for i in x.split(",")], help='weight decay', default = [3e-6,3e-3])
+parser.add_argument('--batch_size', type=lambda x: [int(i) for i in x.split(",")], help='batch size', default = [32,64])
 parser.add_argument('--optim_type', type=lambda x: [str(i) for i in x.split(",")], help='adam/adamw/sgd', default = ["adam"])
 parser.add_argument('--lr_schedule', type=lambda x: [str(i) for i in x.split(",")], help='cosine_decay/polynomial_decay/linear_decay', default = ["linear_decay"])
 
 
 
 # tabualr settings
-parser.add_argument('--tabular', type=int, help='tabular predictor', default = 1)
-parser.add_argument('--auto_features', type=int, help='generate some default features by sequences', default = 1)
+parser.add_argument('--tabular', type=int, help='tabular predictor', default = 0)
+parser.add_argument('--auto_features', type=int, help='generate some default features by sequences', default = 0)
 # parser.add_argument('--tabular_model', type=str, help='tabular predictor model', default = "XGB")
 parser.add_argument('--tabular_model', 
                     choices=model_mapping.values(), 
@@ -81,7 +83,7 @@ parser.add_argument('--tabular_model',
 # RF/XT HPO settings
 parser.add_argument('--n_estimators', type=lambda x: [int(i) for i in x.split(",")], help='The number of trees in the forest.', default = [100,500])
 parser.add_argument('--criterion', choices=["gini", "entropy", "log_loss"], help='The function to measure the quality of a split', default = "gini")
-parser.add_argument('--max_depth', type=lambda x: [int(i) for i in x.split(",")], help='The maximum depth of the tree', default = [100,10])
+parser.add_argument('--max_depth', type=lambda x: [int(i) for i in x.split(",")], help='The maximum depth of the tree', default = [10,20])
 parser.add_argument('--min_samples_split', type=lambda x: [int(i) for i in x.split(",")], help='The minimum number of samples required to split an internal node', default = [2,5])
 parser.add_argument('--min_samples_leaf', type=lambda x: [int(i) for i in x.split(",")], help='The minimum number of samples required to be at a leaf node', default = [1,10])
 
@@ -274,6 +276,7 @@ if __name__ == "__main__" :
     parent_dir = os.path.dirname(current_file_dir)
     
     df = pd.read_csv(f'{parent_dir}/{args.data}')
+    # df = df[:500]
     
     # auto feature engineering
     if args.auto_features and args.tabular:
@@ -391,8 +394,7 @@ if __name__ == "__main__" :
         options = {}
         if args.tabular_model == "RF" or args.tabular_model == "XT":
             options = {
-                'n_estimators': space.Int(args.n_estimators[0], args.n_estimators[-1], default= (args.n_estimators[0] + args.n_estimators[-1])/2),
-                'criterion': args.criterion,
+                'n_estimators': space.Int(args.n_estimators[0], args.n_estimators[-1], default= int((args.n_estimators[0] + args.n_estimators[-1])/2)),
                 'max_depth': space.Int(args.max_depth[0], args.max_depth[-1], default=int((args.max_depth[0] + args.max_depth[-1])/2)),
                 'min_samples_leaf': space.Int(args.min_samples_leaf[0], args.min_samples_leaf[-1], default=int((args.min_samples_leaf[0] + args.min_samples_leaf[-1])/2)),
             }
@@ -427,13 +429,14 @@ if __name__ == "__main__" :
             hyperparameter_tune_kwargs["searcher"] = args.searcher
             hyperparameter_tune_kwargs["num_trials"] = args.num_trials
             if args.searcher == "grid":
+                # hyperparameter_tune_kwargs["searcher"] = "local_grid"
                 points=[i for i in ParameterGrid(rf_grid_paras)]
                 print("grid points:",points)
                 custom_hyperparameters = {f'{args.tabular_model}': points}
                 hyperparameter_tune_kwargs = {}
-                # searcher = BasicVariantGenerator(constant_grid_search=True, points_to_evaluate = points)
-                # hyperparameter_tune_kwargs["searcher"] = "random"
-            
+            if args.searcher == "bayes":
+                hyperparameter_tune_kwargs["searcher"] = "auto"
+        # TODO: current autotabular bayes is indeed random except NN model. 
             
             
 
@@ -472,7 +475,7 @@ if __name__ == "__main__" :
                 predictor.fit(train_data = train_data, tuning_data=valid_data, feature_generator=mypipeline,)
 
         else:
-            save_path = tabular_save_path
+            save_path = automm_save_path
             seqs_columns = find_sequence_columns(train_data)
             print("seqs columns:", seqs_columns)
             column_types = {}
