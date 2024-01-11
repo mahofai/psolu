@@ -1,0 +1,15 @@
+artifact_uri: file:///user/mahaohui/autoML/git/psolu/mlruns/0/5582acf9271a4e93b961181db3afe73b/artifacts
+end_time: 1704946978267
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: 5582acf9271a4e93b961181db3afe73b
+run_name: debonair-swan-357
+run_uuid: 5582acf9271a4e93b961181db3afe73b
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1704946964085
+status: 4
+tags: []
+user_id: mahaohui

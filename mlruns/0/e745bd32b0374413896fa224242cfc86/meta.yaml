@@ -1,0 +1,15 @@
+artifact_uri: file:///user/mahaohui/autoML/git/psolu/mlruns/0/e745bd32b0374413896fa224242cfc86/artifacts
+end_time: 1704947047098
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: e745bd32b0374413896fa224242cfc86
+run_name: salty-ram-884
+run_uuid: e745bd32b0374413896fa224242cfc86
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1704947046970
+status: 4
+tags: []
+user_id: mahaohui

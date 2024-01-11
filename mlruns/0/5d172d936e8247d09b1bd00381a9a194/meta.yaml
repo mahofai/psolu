@@ -1,0 +1,15 @@
+artifact_uri: file:///user/mahaohui/autoML/git/psolu/mlruns/0/5d172d936e8247d09b1bd00381a9a194/artifacts
+end_time: 1704941995672
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: 5d172d936e8247d09b1bd00381a9a194
+run_name: big-ant-742
+run_uuid: 5d172d936e8247d09b1bd00381a9a194
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1704941857558
+status: 4
+tags: []
+user_id: mahaohui

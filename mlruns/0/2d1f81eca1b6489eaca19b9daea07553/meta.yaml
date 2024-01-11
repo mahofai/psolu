@@ -1,0 +1,15 @@
+artifact_uri: file:///user/mahaohui/autoML/git/psolu/mlruns/0/2d1f81eca1b6489eaca19b9daea07553/artifacts
+end_time: 1704949069197
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: 2d1f81eca1b6489eaca19b9daea07553
+run_name: glamorous-fox-228
+run_uuid: 2d1f81eca1b6489eaca19b9daea07553
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1704949050200
+status: 3
+tags: []
+user_id: mahaohui

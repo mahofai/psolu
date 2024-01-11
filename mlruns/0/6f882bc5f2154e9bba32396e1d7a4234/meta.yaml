@@ -1,0 +1,15 @@
+artifact_uri: file:///user/mahaohui/autoML/git/psolu/mlruns/0/6f882bc5f2154e9bba32396e1d7a4234/artifacts
+end_time: 1704947929370
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: 6f882bc5f2154e9bba32396e1d7a4234
+run_name: wise-zebra-288
+run_uuid: 6f882bc5f2154e9bba32396e1d7a4234
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1704947793309
+status: 3
+tags: []
+user_id: mahaohui

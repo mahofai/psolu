@@ -99,7 +99,6 @@ class SoluProtPyModel(mlflow.pyfunc.PythonModel):
         return 
             -> [numpy.ndarray | pandas.(Series | DataFrame) | List]
         '''
-
         print("model_input:", model_input)
         outputs = self.predictor.predict(model_input)
         print("outputs:",outputs)

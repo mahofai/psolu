@@ -1,0 +1,15 @@
+artifact_uri: file:///user/mahaohui/autoML/git/psolu/mlruns/0/57c9eea6c84042cfb332343d5e1b4f25/artifacts
+end_time: 1704942211507
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: 57c9eea6c84042cfb332343d5e1b4f25
+run_name: judicious-worm-551
+run_uuid: 57c9eea6c84042cfb332343d5e1b4f25
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1704942211323
+status: 4
+tags: []
+user_id: mahaohui

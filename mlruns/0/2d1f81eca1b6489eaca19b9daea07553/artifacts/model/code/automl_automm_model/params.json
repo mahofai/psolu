@@ -1,0 +1,14 @@
+{
+  "env.batch_size": 32,
+  "model.names": [
+    "categorical_mlp",
+    "numerical_mlp",
+    "fusion_mlp"
+  ],
+  "optimization.learning_rate": 1e-06,
+  "optimization.lr_decay": 2e-06,
+  "optimization.lr_schedule": "linear_decay",
+  "optimization.max_epochs": 3,
+  "optimization.optim_type": "adam",
+  "optimization.weight_decay": 3e-06
+}

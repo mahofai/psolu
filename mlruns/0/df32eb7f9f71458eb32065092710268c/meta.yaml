@@ -1,0 +1,15 @@
+artifact_uri: file:///user/mahaohui/autoML/git/psolu/mlruns/0/df32eb7f9f71458eb32065092710268c/artifacts
+end_time: 1704942137512
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: df32eb7f9f71458eb32065092710268c
+run_name: welcoming-hen-304
+run_uuid: df32eb7f9f71458eb32065092710268c
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1704942095976
+status: 4
+tags: []
+user_id: mahaohui

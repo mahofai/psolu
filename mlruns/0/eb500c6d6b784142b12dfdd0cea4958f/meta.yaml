@@ -1,0 +1,15 @@
+artifact_uri: file:///user/mahaohui/autoML/git/psolu/mlruns/0/eb500c6d6b784142b12dfdd0cea4958f/artifacts
+end_time: 1704884383028
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: eb500c6d6b784142b12dfdd0cea4958f
+run_name: likeable-stag-377
+run_uuid: eb500c6d6b784142b12dfdd0cea4958f
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1704884232452
+status: 3
+tags: []
+user_id: mahaohui
