@@ -35,7 +35,12 @@ from propythia.protein.descriptors import ProteinDescritors
 from propythia.dna.calculate_features import calculate_and_normalize
 from propythia.dna.sequence import ReadDNA
 
- 
+model_mapping = {
+    'random_forrest': 'RF',
+    'extra_tree': 'XT',
+    "XGBoost": 'XGB',  # Add other models as needed
+    # Add more mappings as needed
+}
  
 parser = argparse.ArgumentParser(description='argument parser')
 
@@ -62,17 +67,23 @@ parser.add_argument('--optim_type', type=lambda x: [str(i) for i in x.split(",")
 parser.add_argument('--lr_schedule', type=lambda x: [str(i) for i in x.split(",")], help='cosine_decay/polynomial_decay/linear_decay', default = ["linear_decay"])
 
 
+
 # tabualr settings
 parser.add_argument('--tabular', type=int, help='tabular predictor', default = 1)
-parser.add_argument('--tabular_model', type=str, help='tabular predictor model', default = "XGB")
 parser.add_argument('--auto_features', type=int, help='generate some default features by sequences', default = 1)
+# parser.add_argument('--tabular_model', type=str, help='tabular predictor model', default = "XGB")
+parser.add_argument('--tabular_model', 
+                    choices=model_mapping.values(), 
+                    type=lambda s: model_mapping.get(s, s), 
+                    help='tabular predictor model (e.g., random forest, XGB)',
+                    default="random_forrest")
 
 # RF/XT HPO settings
-parser.add_argument('--n_estimators', type=lambda x: [int(i) for i in x.split(",")], help='The number of trees in the forest.', default = [100,500,1000])
+parser.add_argument('--n_estimators', type=lambda x: [int(i) for i in x.split(",")], help='The number of trees in the forest.', default = [100,500])
 parser.add_argument('--criterion', choices=["gini", "entropy", "log_loss"], help='The function to measure the quality of a split', default = "gini")
-parser.add_argument('--max_depth', type=lambda x: [int(i) for i in x.split(",")], help='The maximum depth of the tree', default = [100])
-parser.add_argument('--min_samples_split', type=lambda x: [int(i) for i in x.split(",")], help='The minimum number of samples required to split an internal node', default = [2])
-parser.add_argument('--min_samples_leaf', type=lambda x: [int(i) for i in x.split(",")], help='The minimum number of samples required to be at a leaf node', default = [1])
+parser.add_argument('--max_depth', type=lambda x: [int(i) for i in x.split(",")], help='The maximum depth of the tree', default = [100,10])
+parser.add_argument('--min_samples_split', type=lambda x: [int(i) for i in x.split(",")], help='The minimum number of samples required to split an internal node', default = [2,5])
+parser.add_argument('--min_samples_leaf', type=lambda x: [int(i) for i in x.split(",")], help='The minimum number of samples required to be at a leaf node', default = [1,10])
 
 #XGB/CAT/LGB
 parser.add_argument('--subsample', type=lambda x: [int(i) for i in x.split(",")], help='subsample.', default = [0.6,0.8])
@@ -95,11 +106,15 @@ class autogluonPyModel(mlflow.pyfunc.PythonModel):
     #     self.class autogluonPyModel(mlflow.pyfunc.PythonModel):
 
     def __init__(self, predictor, signature=""):
-    
+
         self.predictor = predictor
         # self.ps_featurize = ps_featurize
         # self.signature = signature
         # self.input_names, self.output_names = signature.inputs.input_names(), signature.outputs.input_names()
+        print("PWD:",os.getcwd())
+        print("self.predictor.path:",self.predictor.path)
+        os.system(f"cp -r ../ml/model/code/{self.predictor.path} .")
+        print("ls:",os.system("ls"))
         
     def evaluate(self,  model_input, metrics=[]):
         if  len(metrics) > 1:
@@ -120,10 +135,7 @@ class autogluonPyModel(mlflow.pyfunc.PythonModel):
         return 
             -> [numpy.ndarray | pandas.(Series | DataFrame) | List]
         '''
-        print("PWD:",os.getcwd())
-        print("self.predictor.path:",self.predictor.path)
-        os.system(f"cp -r ../ml/model/code/{self.predictor.path} .")
-        print("ls:",os.system("ls"))
+
         print("model_input:", model_input)
         outputs = self.predictor.predict(model_input)
         print("outputs:",outputs)
@@ -186,6 +198,12 @@ def add_protein_features(df, seq_column):
     processed_dataframe = pd.DataFrame()
     processed_dataframe = descriptors_df.get_all_physicochemical()
     output_dataframe = processed_dataframe.merge(output_dataframe, on=seq_column, how='inner') 
+    filtered_columns = [col for col in output_dataframe.columns if "_y" not in col]
+    output_dataframe = output_dataframe[filtered_columns]
+    mapping_function = lambda col: col.replace("_x", "")
+
+    # Use the rename method to apply the mapping function to all columns
+    output_dataframe.rename(columns=mapping_function, inplace=True)
     
     # processed_df = descriptors_df.get_all_aac()
     # df = df.merge(processed_df, on=seq_column, how='inner') 
@@ -260,7 +278,7 @@ if __name__ == "__main__" :
     # auto feature engineering
     if args.auto_features and args.tabular:
         df = auto_features(df)
-        np.set_printoptions(threshold=np.inf)
+        np.set_printoptions(threshold=np.inf) # type: ignore
         print("auto featrues.columns:",df.columns[:20])
         print("auto featrues:",df)
     
@@ -405,13 +423,18 @@ if __name__ == "__main__" :
             }
         if args.tabular:
             custom_hyperparameters = {f'{args.tabular_model}': options}
+            hyperparameter_tune_kwargs["scheduler"] = 'local'
             hyperparameter_tune_kwargs["searcher"] = args.searcher
+            hyperparameter_tune_kwargs["num_trials"] = args.num_trials
             if args.searcher == "grid":
                 points=[i for i in ParameterGrid(rf_grid_paras)]
-                searcher = BasicVariantGenerator(constant_grid_search=True, points_to_evaluate = points)
-                hyperparameter_tune_kwargs["searcher"] = searcher
+                print("grid points:",points)
+                custom_hyperparameters = {f'{args.tabular_model}': points}
+                hyperparameter_tune_kwargs = {}
+                # searcher = BasicVariantGenerator(constant_grid_search=True, points_to_evaluate = points)
+                # hyperparameter_tune_kwargs["searcher"] = "random"
             
-            hyperparameter_tune_kwargs["scheduler"] = "local"
+            
             
 
         # hyperparameter_tune_kwargs = {  # HPO is not performed unless hyperparameter_tune_kwargs is specified
@@ -424,12 +447,14 @@ if __name__ == "__main__" :
         current_dir = os.getcwd()
         tabular_save_path = "automl_tabular_model"
         automm_save_path = "automl_automm_model"
+        save_path = "model"
         if args.tabular:
+            save_path = tabular_save_path
             print("feature engineering processing!!!")
             predictor = TabularPredictor(
                 label=args.target_column,
                 eval_metric=args.metric,
-                path=tabular_save_path,
+                path=save_path,
             )
             if args.mode != "manual" :
                 print("!!!default parameter")
@@ -447,13 +472,14 @@ if __name__ == "__main__" :
                 predictor.fit(train_data = train_data, tuning_data=valid_data, feature_generator=mypipeline,)
 
         else:
+            save_path = tabular_save_path
             seqs_columns = find_sequence_columns(train_data)
             print("seqs columns:", seqs_columns)
             column_types = {}
             for seqs_column in seqs_columns:
                 column_types[seqs_column] = "text"
             print("column_types:",column_types)
-            predictor = MultiModalPredictor(label=args.target_column,eval_metric = args.metric, path=automm_save_path)
+            predictor = MultiModalPredictor(label=args.target_column,eval_metric = args.metric, path=save_path)
             predictor.set_verbosity(4)
             predictor.fit(train_data = train_data, 
                         tuning_data =valid_data,
@@ -470,7 +496,7 @@ if __name__ == "__main__" :
             artifact_path='model', python_model=model,
             registered_model_name="model",
             input_example=train_data.iloc[[-1]],
-            code_path=[f'{current_dir}/{automm_save_path}']
+            code_path=[f'{current_dir}/{save_path}']
         )
         # model = mlflow.pyfunc.load_model(model_uri=model_info.model_uri).unwrap_python_model()
 
